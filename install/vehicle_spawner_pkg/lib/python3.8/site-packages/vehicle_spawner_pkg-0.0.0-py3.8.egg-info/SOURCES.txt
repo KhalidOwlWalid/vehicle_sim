@@ -1,0 +1,16 @@
+package.xml
+setup.cfg
+setup.py
+../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/PKG-INFO
+../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/SOURCES.txt
+../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/dependency_links.txt
+../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/entry_points.txt
+../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/requires.txt
+../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/top_level.txt
+../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/zip-safe
+resource/vehicle_spawner_pkg
+test/test_copyright.py
+test/test_flake8.py
+test/test_pep257.py
+vehicle_spawner_pkg/__init__.py
+vehicle_spawner_pkg/spawn_vehicle.py

@@ -1,0 +1,21 @@
+[0.756s] Invoking command in '/home/khalidowlwalid/vehicle_ws/src/vehicle_spawner_pkg': PYTHONPATH=/home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/vehicle_spawner_pkg build --build-base /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/build install --prefix /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg --record /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/install.log --single-version-externally-managed
+[1.015s] running egg_info
+[1.016s] writing ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/PKG-INFO
+[1.016s] writing dependency_links to ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/dependency_links.txt
+[1.017s] writing entry points to ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/entry_points.txt
+[1.017s] writing requirements to ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/requires.txt
+[1.017s] writing top-level names to ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/top_level.txt
+[1.053s] reading manifest file '../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/SOURCES.txt'
+[1.053s] writing manifest file '../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/SOURCES.txt'
+[1.054s] running build
+[1.054s] running build_py
+[1.054s] running install
+[1.055s] running install_lib
+[1.056s] running install_data
+[1.057s] running install_egg_info
+[1.059s] removing '/home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages/vehicle_spawner_pkg-0.0.0-py3.8.egg-info' (and everything under it)
+[1.059s] Copying ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info to /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages/vehicle_spawner_pkg-0.0.0-py3.8.egg-info
+[1.060s] running install_scripts
+[1.079s] Installing spawn_vehicle script to /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/vehicle_spawner_pkg
+[1.079s] writing list of installed files to '/home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/install.log'
+[1.103s] Invoked command in '/home/khalidowlwalid/vehicle_ws/src/vehicle_spawner_pkg' returned '0': PYTHONPATH=/home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 setup.py egg_info --egg-base ../../build/vehicle_spawner_pkg build --build-base /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/build install --prefix /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg --record /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/install.log --single-version-externally-managed

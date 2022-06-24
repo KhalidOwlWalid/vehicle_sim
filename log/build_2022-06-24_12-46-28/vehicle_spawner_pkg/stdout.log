@@ -1,0 +1,35 @@
+running egg_info
+creating ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info
+writing ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/PKG-INFO
+writing dependency_links to ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/dependency_links.txt
+writing entry points to ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/entry_points.txt
+writing requirements to ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/requires.txt
+writing top-level names to ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/top_level.txt
+writing manifest file '../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/SOURCES.txt'
+reading manifest file '../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/SOURCES.txt'
+writing manifest file '../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/build
+creating /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/build/lib
+creating /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/build/lib/vehicle_spawner_pkg
+copying vehicle_spawner_pkg/__init__.py -> /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/build/lib/vehicle_spawner_pkg
+copying vehicle_spawner_pkg/spawn_vehicle.py -> /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/build/lib/vehicle_spawner_pkg
+running install
+running install_lib
+creating /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages/vehicle_spawner_pkg
+copying /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/build/lib/vehicle_spawner_pkg/__init__.py -> /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages/vehicle_spawner_pkg
+copying /home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/build/lib/vehicle_spawner_pkg/spawn_vehicle.py -> /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages/vehicle_spawner_pkg
+byte-compiling /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages/vehicle_spawner_pkg/__init__.py to __init__.cpython-38.pyc
+byte-compiling /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages/vehicle_spawner_pkg/spawn_vehicle.py to spawn_vehicle.cpython-38.pyc
+running install_data
+creating /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/share/ament_index
+creating /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/share/ament_index/resource_index
+creating /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/share/ament_index/resource_index/packages
+copying resource/vehicle_spawner_pkg -> /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/share/ament_index/resource_index/packages
+copying package.xml -> /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/share/vehicle_spawner_pkg
+running install_egg_info
+Copying ../../build/vehicle_spawner_pkg/vehicle_spawner_pkg.egg-info to /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/python3.8/site-packages/vehicle_spawner_pkg-0.0.0-py3.8.egg-info
+running install_scripts
+Installing spawn_vehicle script to /home/khalidowlwalid/vehicle_ws/install/vehicle_spawner_pkg/lib/vehicle_spawner_pkg
+writing list of installed files to '/home/khalidowlwalid/vehicle_ws/build/vehicle_spawner_pkg/install.log'
