@@ -1,61 +1,53 @@
 import pygame
 from pygame.locals import (K_w, K_a, K_s, K_d, KEYDOWN, K_ESCAPE)
+from pygame import transform
 
 # TODO(Khalid): Create a color dictionary
 # TODO(Khalid): Modularize this class cause it sucks
+
+class Color:
+
+    @staticmethod
+    def white():
+        return (255,255,255)
+
+    @staticmethod
+    def black():
+        return (0,0,0)
+
+    def red():
+        return (255,0,0)
+
 class Car(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, x: float, y: float, orientation: float, steering_angle: float, screen: pygame.display):
         super(Car, self).__init__()
+        # Car properties
+        self.CHASSIS_LENGTH = 80
+        self.CHASSIS_WIDTH = 60
+        self.WHEEL_WIDTH = 10
+        self.WHEEL_DIAMETER = 15
 
-        self.x = 0
-        self.y = 0
+        # Due to how pygame blits the top left corner on top of the surface top left corner
+        # We calculated it this way to centralized it
+        self.cog = ((self.CHASSIS_WIDTH - self.WHEEL_WIDTH)/2, (self.CHASSIS_LENGTH - self.WHEEL_DIAMETER)/2)
 
-        # Create the body of the car
-        CHASSIS_WIDTH = 60
-        CHASSIS_HEIGHT = 80
-        self.surf = pygame.Surface((CHASSIS_WIDTH, CHASSIS_HEIGHT))
-        self.surf.fill((255, 255, 255))
+        # Due to how this is calculated, we shift xc and yc position to the center of chassis
+        self.xc = x - self.CHASSIS_WIDTH/2
+        self.yc = y - self.CHASSIS_LENGTH/2
+        self.orientation = orientation
+        self.steering_angle = steering_angle
+        self.screen = screen
+        
+
+        self.surf = pygame.Surface(((self.CHASSIS_WIDTH), self.CHASSIS_LENGTH))
+        self.surf.fill(Color.red())
         self.rect = self.surf.get_rect()
 
-        # Create wheels
-        WHEEL_WIDTH = 10
-        WHEEL_HEIGHT = 15
-        CHASSIS_CENTER = ((CHASSIS_WIDTH - WHEEL_WIDTH)/2, (CHASSIS_HEIGHT - WHEEL_WIDTH)/2)
-
-        self.fl_surf = pygame.Surface((WHEEL_WIDTH, WHEEL_HEIGHT))
-        self.fl_surf.fill((0,0,0))
-        self.fl_rect = self.fl_surf.get_rect()
-        self.surf.blit(self.fl_surf, dest=(CHASSIS_CENTER[0] - 15, CHASSIS_CENTER[1] - 20))
-
-        self.fr_surf = pygame.Surface((WHEEL_WIDTH, WHEEL_HEIGHT))
-        self.fr_surf.fill((0,0,0))
-        self.fr_rect = self.fr_surf.get_rect()
-        self.surf.blit(self.fr_surf, dest=(CHASSIS_CENTER[0] + 15, CHASSIS_CENTER[1] - 20))
-
-        # Rear wheels
-        pygame.draw.rect(self.surf, color=(0,0,0), rect=pygame.Rect(CHASSIS_CENTER[0] - 15, CHASSIS_CENTER[1] + 20, WHEEL_WIDTH, WHEEL_HEIGHT))
-        pygame.draw.rect(self.surf, color=(0,0,0), rect=pygame.Rect(CHASSIS_CENTER[0] + 15, CHASSIS_CENTER[1] + 20, WHEEL_WIDTH, WHEEL_HEIGHT))
-
-    # Move the sprite based on user keypresses
-    def update(self, pressed_keys):
-        if pressed_keys[K_w]:
-            self.rect.move_ip(0, -1)
-        if pressed_keys[K_s]:
-            self.rect.move_ip(0, 1)
-        if pressed_keys[K_a]:
-            self.rect.move_ip(-1, 0)
-        if pressed_keys[K_d]:
-            self.rect.move_ip(1, 0)
-
-            # Keep player on the screen
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if self.rect.right > SCREEN_WIDTH:
-            self.rect.right = SCREEN_WIDTH
-        if self.rect.top <= 0:
-            self.rect.top = 0
-        if self.rect.bottom >= SCREEN_HEIGHT:
-            self.rect.bottom = SCREEN_HEIGHT
+    def draw_rear_wheel(self, reflect: int=1) -> tuple[int]:
+        """
+        reflect (1,-1) where 1 is for right side, and -1 for left side
+        """
+        pygame.draw.rect(self.surf, color=Color.black(), rect=pygame.Rect(self.cog[0] + reflect * self.CHASSIS_WIDTH/4, self.cog[1] + self.CHASSIS_LENGTH/4, self.WHEEL_WIDTH, self.WHEEL_DIAMETER))
 
 pygame.init()
 
@@ -67,10 +59,11 @@ screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
 # Run until the user asks to quit
 running = True
 
-car = Car()
+SCREEN_CENTER = (SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
+car = Car(x=SCREEN_CENTER[0], y=SCREEN_CENTER[1], orientation=0, steering_angle=0, screen=screen)
 
-all_sprites = pygame.sprite.Group()
-all_sprites.add(car)
+entities = pygame.sprite.Group()
+entities.add(car)
 
 while running:
 
@@ -84,16 +77,16 @@ while running:
             if event.key == K_ESCAPE:
                 running = False
 
-    pressed_keys = pygame.key.get_pressed()
-    car.update(pressed_keys)
-
-    # Fill the background with white
-    screen.fill((0, 0, 0))
+    screen.fill(Color.white())
     
-    for entity in all_sprites:
-        screen.blit(entity.surf, entity.rect)
+    for entity in entities:
+        entity.draw_rear_wheel(reflect=1)
+        entity.draw_rear_wheel(reflect=-1)
+        screen.blit(entity.surf, (entity.xc, entity.yc))
+    # Fill the background with white
 
     # Flip the display
+    car.xc += 0.01
     pygame.display.flip()
 
 # Done! Time to quit.
