@@ -48,6 +48,21 @@ class Car(pygame.sprite.Sprite):
         reflect (1,-1) where 1 is for right side, and -1 for left side
         """
         pygame.draw.rect(self.surf, color=Color.black(), rect=pygame.Rect(self.cog[0] + reflect * self.CHASSIS_WIDTH/4, self.cog[1] + self.CHASSIS_LENGTH/4, self.WHEEL_WIDTH, self.WHEEL_DIAMETER))
+    
+    def draw_front_wheel(self, reflect: int=1) -> tuple[int]:
+        """
+        reflect (1,-1) where 1 is for right side, and -1 for left side
+        """
+        pygame.draw.rect(self.surf, color=Color.black(), rect=pygame.Rect(self.cog[0] + reflect * self.CHASSIS_WIDTH/4, self.cog[1] - self.CHASSIS_LENGTH/4, self.WHEEL_WIDTH, self.WHEEL_DIAMETER))
+    
+    # def draw_front_wheel(self):
+
+    #     p1 = (self.cog[0]  - self.WHEEL_WIDTH/2 - self.CHASSIS_WIDTH/4, self.cog[1]  + self.WHEEL_DIAMETER/2 - self.CHASSIS_LENGTH/4)
+    #     p2 = (self.cog[0]  + self.WHEEL_WIDTH/2, self.cog[1]  + self.WHEEL_DIAMETER/2)
+    #     p3 = (self.cog[0]  + self.WHEEL_WIDTH/2, self.cog[1]  - self.WHEEL_DIAMETER/2)
+    #     p4 = (self.cog[0]  - self.WHEEL_WIDTH/2, self.cog[1]  - self.WHEEL_DIAMETER/2)
+
+    #     pygame.draw.polygon(self.surf, color=Color.black(), points=(p1,p2,p3,p4))
 
 pygame.init()
 
@@ -82,11 +97,12 @@ while running:
     for entity in entities:
         entity.draw_rear_wheel(reflect=1)
         entity.draw_rear_wheel(reflect=-1)
+        entity.draw_front_wheel(reflect=1)
+        entity.draw_front_wheel(reflect=-1)
         screen.blit(entity.surf, (entity.xc, entity.yc))
     # Fill the background with white
 
     # Flip the display
-    car.xc += 0.01
     pygame.display.flip()
 
 # Done! Time to quit.
