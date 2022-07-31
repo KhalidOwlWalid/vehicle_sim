@@ -1,8 +1,10 @@
 # Simple pygame program
+import os
 
 # Import and initialize the pygame library
 import pygame
 import numpy as np
+from datetime import datetime
 
 pygame.init()
 
@@ -61,6 +63,7 @@ class KinematicBicycleModel:
     def calculate_distance(self, x_prev: float, x_cur: float, y_prev: float, y_cur: float) -> tuple[float, float, float, float]:
         return np.sqrt((x_cur - x_prev) ** 2 + (y_cur - y_prev) ** 2)
 
+
 SCREEN_WIDTH = 500
 SCREEN_HEIGHT = 500
 # Setup the window we'll use for drawing
@@ -70,6 +73,10 @@ model = KinematicBicycleModel(SCREEN_WIDTH/2, SCREEN_HEIGHT/4, 0, 0, screen=scre
 
 # Run until the user asks us to quit
 running = True
+
+# TODO(Khalid): Data collection
+tmp_data_list = []
+
 while running:
 
     # Did the user click the window close button?
@@ -77,9 +84,11 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    # Update FPS rate
     clock = pygame.time.Clock()
     clock.tick(1/model.sample_time)
 
+    # Update model information
     font = pygame.font.SysFont(None, 24)
     xc_surf = font.render(f'xc : {np.round(model.xc, 3)}', True, Color.black())
     yc_surf = font.render(f'yc : {np.round(model.yc, 3)}', True, Color.black())
@@ -87,6 +96,7 @@ while running:
     time_surf = font.render(f'Time : {np.round(model.time, 3)}', True, Color.black())
 
     surface_text_list = [xc_surf, yc_surf, steering_surf, time_surf]
+
     # Fill the background with white
     screen.fill(Color.white())
 
@@ -97,15 +107,24 @@ while running:
     x_prev, y_prev = model.xc, model.yc
     model.update(30, 0)
     model.distance_travelled += model.calculate_distance(x_prev, model.xc, y_prev, model.yc)
-    model.draw_circle()
 
-    if model.time > 3.0:
-        pygame.time.delay(5000)
+    tmp_data_list.append((np.round(model.time, 3), np.round(model.xc, 3), np.round(model.yc, 3), np.round(model.distance_travelled, 3)))
+
+    model.draw_circle()
 
     # Flip the display
     pygame.display.flip()
 
-    
+# Extract data
+tmp_data_list = np.array(tmp_data_list)
+
+# File properties
+now = datetime.now()
+cwd = os.getcwd()
+filename = now.strftime("%d-%m-%Y-%H_%M_%S")
+file = os.path.join(cwd,"theory", "data", f"{filename}.csv")
+header = "Time, xc, yc, Distance travelled"
+np.savetxt(file, tmp_data_list, delimiter=',', fmt=('%5.4f', '%5.4f', '%5.4f', '%5.4f'), header=header, comments="")
 
 # We're done, so we can quit now.
 pygame.quit()
