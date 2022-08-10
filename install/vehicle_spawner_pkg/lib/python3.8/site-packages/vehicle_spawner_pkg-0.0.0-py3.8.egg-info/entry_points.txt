@@ -1,3 +1,0 @@
-[console_scripts]
-spawn_vehicle = vehicle_spawner_pkg.spawn_vehicle:main
-
