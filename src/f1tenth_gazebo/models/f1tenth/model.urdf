@@ -1,0 +1,264 @@
+<?xml version="1.0"?>
+
+<!-- In order to compartmentalize and organize the data, the xacro format is typically used.
+     However, there were many issues in getting that file format to work properly with the robot controllers.
+     Therefore, the original urdf is left here, untouched, as a back-up in case errors in the xacro format return. -->
+
+<robot name="f1tenth" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<!-- Define the RGBA values for some common colors -->
+  <material name="black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+  <material name="blue">
+    <color rgba="0.203125 0.23828125 0.28515625 1.0"/>
+  </material>
+  <material name="green">
+    <color rgba="0.0 0.8 0.0 1.0"/>
+  </material>
+  <material name="grey">
+    <color rgba="0.2 0.2 0.2 1.0"/>
+  </material>
+  <material name="orange">
+    <color rgba="1.0 0.423529411765 0.0392156862745 1.0"/>
+  </material>
+  <material name="brown">
+    <color rgba="0.870588235294 0.811764705882 0.764705882353 1.0"/>
+  </material>
+  <material name="red">
+    <color rgba="0.80078125 0.12890625 0.1328125 1.0"/>
+  </material>
+  <material name="white">
+    <color rgba="1.0 1.0 1.0 1.0"/>
+  </material>
+    
+<xacro:property name="pi" value="3.1416"/>
+  
+  
+<!-- Define the geometry of the simple differential bot (two rear wheels + spherical front caster -->  
+   <link name="link_chassis">
+   
+    <!-- pose and inertial -->
+    <pose>0 0 0.1 0 0 0</pose>
+    <inertial>
+      <mass value="5"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1"/>
+      <inertia ixx="0.0395416666667" ixy="0" ixz="0" iyy="0.106208333333" iyz="0" izz="0.106208333333"/>
+    </inertial>
+    
+    <!-- body -->
+    <collision name="collision_chassis">
+      <geometry>
+        <box size="0.5 0.3 0.03"/>
+      </geometry>
+    </collision>
+    
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.5 0.3 0.03"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    
+  </link>
+  
+<!-- FRONT TIRE  -->
+  <link name="link_front_right_wheel">
+    <inertial>
+      <mass value="0.2"/>
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <inertia ixx="0.000526666666667" ixy="0" ixz="0" iyy="0.000526666666667" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision name="link_front_right_wheel_collision">
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.04" radius="0.05"/>
+      </geometry>
+    </collision>
+    <visual name="link_front_right_wheel_visual">
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.04" radius="0.05"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="joint_front_right_wheel" type="revolute">
+    <origin rpy="0 0 0" xyz="0.2 0.17 0"/>
+    <child link="link_front_right_wheel"/>
+    <parent link="link_chassis"/>
+    <axis rpy="0 0 0" xyz="0 0 1"/>
+    <limit effort="10000" velocity="1000" lower="-0.7" upper="0.7"/>
+    <joint_properties damping="1.0" friction="1.0"/>
+  </joint>
+  
+  <link name="link_front_left_wheel">
+    <inertial>
+      <mass value="0.2"/>
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <inertia ixx="0.000526666666667" ixy="0" ixz="0" iyy="0.000526666666667" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision name="link_front_left_wheel_collision">
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.04" radius="0.05"/>
+      </geometry>
+    </collision>
+    <visual name="link_front_right_wheel_visual">
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.04" radius="0.05"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="joint_front_left_wheel" type="revolute">
+    <origin rpy="0 0 0" xyz="0.2 -0.17 0"/>
+    <child link="link_front_left_wheel"/>
+    <parent link="link_chassis"/>
+    <axis rpy="0 0 0" xyz="0 0 1"/>
+    <limit effort="10000" velocity="1000" lower="-0.7" upper="0.7"/>
+    <joint_properties damping="1.0" friction="1.0"/>
+  </joint>
+
+<!--   REAR WHEEL   -->
+  <link name="link_rear_right_wheel">
+    <inertial>
+      <mass value="0.2"/>
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <inertia ixx="0.000526666666667" ixy="0" ixz="0" iyy="0.000526666666667" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision name="link_rear_right_wheel_collision">
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.04" radius="0.05"/>
+      </geometry>
+    </collision>
+    <visual name="link_rear_right_wheel_visual">
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.04" radius="0.05"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="joint_rear_right_wheel" type="continuous">
+    <origin rpy="0 0 0" xyz="-0.2 0.17 0"/>
+    <child link="link_rear_right_wheel"/>
+    <parent link="link_chassis"/>
+    <axis rpy="0 0 0" xyz="0 1 0"/>
+    <limit effort="10000" velocity="1000"/>
+    <joint_properties damping="1.0" friction="1.0"/>
+  </joint>
+    
+  <link name="link_rear_left_wheel">
+    <inertial>
+      <mass value="0.2"/>
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <inertia ixx="0.000526666666667" ixy="0" ixz="0" iyy="0.000526666666667" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision name="link_rear_left_wheel_collision">
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.04" radius="0.05"/>
+      </geometry>
+    </collision>
+    <visual name="link_rear_left_wheel_visual">
+      <origin rpy="0 1.5707 1.5707" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.04" radius="0.05"/>
+      </geometry>
+    </visual>
+  </link>
+  
+  <joint name="joint_rear_left_wheel" type="continuous">
+    <origin rpy="0 0 0" xyz="-0.2 -0.17 0"/>
+    <child link="link_rear_left_wheel"/>
+    <parent link="link_chassis"/>
+    <axis rpy="0 0 0" xyz="0 1 0"/>
+    <limit effort="10000" velocity="1000"/>
+    <joint_properties damping="1.0" friction="1.0"/>
+  </joint>
+
+  <link name="imu_link"/>
+  
+  <joint name="imu_joint" type="fixed">
+    <origin rpy="0 0 0.1" xyz="0 0 0"/>
+    <child link="imu_link"/>
+    <parent link="link_chassis"/>
+    <axis rpy="0 0 0" xyz="0 1 0"/>
+  </joint>
+
+
+<!-- Define transmission (describes relationship b/w actuator and a joint) to give velocity commands -->
+  <transmission name="left_wheel_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_front_left_wheel">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="joint_front_left_actuator">
+      <mechanicalReduction>7</mechanicalReduction>
+      <hardwareInterface>VelocityJointInterface</hardwareInterface>
+    </actuator>
+  </transmission>
+  
+  <transmission name="right_wheel_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_front_right_wheel">
+      <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="joint_front_right_actuator">
+      <mechanicalReduction>7</mechanicalReduction>
+      <hardwareInterface>VelocityJointInterface</hardwareInterface>
+    </actuator>
+  </transmission>
+  
+<!-- Send gazebo material information -->
+  <gazebo reference="link_chassis">
+    <material>Gazebo/Orange</material>
+  </gazebo>
+  <gazebo reference="link_left_wheel">
+    <material>Gazebo/Blue</material>
+  </gazebo>
+  <gazebo reference="link_front_right_wheel">
+    <material>Gazebo/Blue</material>
+  </gazebo>
+
+  <!-- Reference : https://github.com/chapulina/dolly/blob/galactic/dolly_gazebo/models/dolly/model.sdf -->
+  <!-- More examples at /opt/ros/galactic/share/gazebo_plugins/worlds -->
+  <gazebo>
+    <plugin name='diff_drive' filename='libgazebo_ros_diff_drive.so'>
+
+      <ros>
+        <namespace>/</namespace>
+      </ros>
+
+      <!-- wheels -->
+      <left_joint>joint_rear_left_wheel</left_joint>
+      <right_joint>joint_rear_right_wheel</right_joint>
+
+      <!-- kinematics -->
+      <wheel_separation>1.25</wheel_separation>
+      <wheel_diameter>0.3</wheel_diameter>
+
+      <!-- limits -->
+      <max_wheel_torque>20</max_wheel_torque>
+      <max_wheel_acceleration>1.0</max_wheel_acceleration>
+
+      <!-- output -->
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>true</publish_odom_tf>
+
+      <odometry_frame>odom_demo</odometry_frame>
+      <robot_base_frame>link_chassis</robot_base_frame>
+
+    </plugin>
+  </gazebo>
+
+    <!-- Gazebo plugin for ROS Control -->
+
+<!-- ============= The following are the URDFs for all inlcuded sensors ============= -->
+
+  
+</robot>
