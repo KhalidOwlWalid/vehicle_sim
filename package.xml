@@ -1,0 +1,228 @@
+[1;94m.[00m
+├── [1;94mbuild[00m
+│   ├── COLCON_IGNORE
+│   └── [1;94mf1tenth_gazebo_plugins[00m
+│       ├── [1;94mament_cmake_core[00m
+│       │   ├── f1tenth_gazebo_pluginsConfig.cmake
+│       │   ├── f1tenth_gazebo_pluginsConfig-version.cmake
+│       │   ├── package.cmake
+│       │   └── [1;94mstamps[00m
+│       │       ├── ament_cmake_export_libraries-extras.cmake.stamp
+│       │       ├── ament_prefix_path.sh.stamp
+│       │       ├── f1tenth_gazebo_plugins.sh.in.stamp
+│       │       ├── library_path.sh.stamp
+│       │       ├── nameConfig.cmake.in.stamp
+│       │       ├── nameConfig-version.cmake.in.stamp
+│       │       ├── package_xml_2_cmake.py.stamp
+│       │       ├── package.xml.stamp
+│       │       ├── path.sh.stamp
+│       │       └── templates_2_cmake.py.stamp
+│       ├── [1;94mament_cmake_environment_hooks[00m
+│       │   ├── ament_prefix_path.dsv
+│       │   ├── f1tenth_gazebo_plugins.sh
+│       │   ├── library_path.dsv
+│       │   ├── local_setup.bash
+│       │   ├── local_setup.dsv
+│       │   ├── local_setup.sh
+│       │   ├── local_setup.zsh
+│       │   ├── package.dsv
+│       │   └── path.dsv
+│       ├── [1;94mament_cmake_export_libraries[00m
+│       │   └── ament_cmake_export_libraries-extras.cmake
+│       ├── [1;94mament_cmake_index[00m
+│       │   └── [1;94mshare[00m
+│       │       └── [1;94mament_index[00m
+│       │           └── [1;94mresource_index[00m
+│       │               ├── [1;94mpackage_run_dependencies[00m
+│       │               │   └── f1tenth_gazebo_plugins
+│       │               ├── [1;94mpackages[00m
+│       │               │   └── f1tenth_gazebo_plugins
+│       │               └── [1;94mparent_prefix_path[00m
+│       │                   └── f1tenth_gazebo_plugins
+│       ├── [1;94mament_cmake_package_templates[00m
+│       │   └── templates.cmake
+│       ├── [1;94mament_cmake_uninstall_target[00m
+│       │   └── ament_cmake_uninstall_target.cmake
+│       ├── [1;94mament_copyright[00m
+│       ├── [1;94mament_cppcheck[00m
+│       ├── [1;94mament_cpplint[00m
+│       ├── [1;94mament_lint_cmake[00m
+│       ├── [1;94mament_uncrustify[00m
+│       ├── [1;94mament_xmllint[00m
+│       ├── cmake_args.last
+│       ├── CMakeCache.txt
+│       ├── [1;94mCMakeFiles[00m
+│       │   ├── [1;94m3.16.3[00m
+│       │   │   ├── CMakeCCompiler.cmake
+│       │   │   ├── CMakeCXXCompiler.cmake
+│       │   │   ├── [01;32mCMakeDetermineCompilerABI_C.bin[00m
+│       │   │   ├── [01;32mCMakeDetermineCompilerABI_CXX.bin[00m
+│       │   │   ├── CMakeSystem.cmake
+│       │   │   ├── [1;94mCompilerIdC[00m
+│       │   │   │   ├── [01;32ma.out[00m
+│       │   │   │   ├── CMakeCCompilerId.c
+│       │   │   │   └── [1;94mtmp[00m
+│       │   │   └── [1;94mCompilerIdCXX[00m
+│       │   │       ├── [01;32ma.out[00m
+│       │   │       ├── CMakeCXXCompilerId.cpp
+│       │   │       └── [1;94mtmp[00m
+│       │   ├── cmake.check_cache
+│       │   ├── CMakeDirectoryInformation.cmake
+│       │   ├── CMakeError.log
+│       │   ├── CMakeOutput.log
+│       │   ├── CMakeRuleHashes.txt
+│       │   ├── [1;94mCMakeTmp[00m
+│       │   ├── [1;94mf1tenth_gazebo_plugins_uninstall.dir[00m
+│       │   │   ├── build.make
+│       │   │   ├── cmake_clean.cmake
+│       │   │   ├── DependInfo.cmake
+│       │   │   └── progress.make
+│       │   ├── [1;94mf1tenth_kinematic_bicycle_model.dir[00m
+│       │   │   ├── build.make
+│       │   │   ├── cmake_clean.cmake
+│       │   │   ├── CXX.includecache
+│       │   │   ├── DependInfo.cmake
+│       │   │   ├── depend.internal
+│       │   │   ├── depend.make
+│       │   │   ├── flags.make
+│       │   │   ├── link.txt
+│       │   │   ├── progress.make
+│       │   │   └── [1;94msrc[00m
+│       │   │       └── f1tenth_kinematic_bicycle_model.cpp.o
+│       │   ├── Makefile2
+│       │   ├── Makefile.cmake
+│       │   ├── progress.marks
+│       │   ├── TargetDirectories.txt
+│       │   └── [1;94muninstall.dir[00m
+│       │       ├── build.make
+│       │       ├── cmake_clean.cmake
+│       │       ├── DependInfo.cmake
+│       │       └── progress.make
+│       ├── cmake_install.cmake
+│       ├── colcon_build.rc
+│       ├── colcon_command_prefix_build.sh
+│       ├── colcon_command_prefix_build.sh.env
+│       ├── CTestConfiguration.ini
+│       ├── CTestCustom.cmake
+│       ├── CTestTestfile.cmake
+│       ├── install_manifest.txt
+│       ├── [01;32mlibf1tenth_kinematic_bicycle_model.so[00m
+│       └── Makefile
+├── [1;94minstall[00m
+│   ├── COLCON_IGNORE
+│   ├── [1;94mf1tenth_gazebo_plugins[00m
+│   │   └── [1;94mshare[00m
+│   │       ├── [1;94mament_index[00m
+│   │       │   └── [1;94mresource_index[00m
+│   │       │       ├── [1;94mpackage_run_dependencies[00m
+│   │       │       │   └── f1tenth_gazebo_plugins
+│   │       │       ├── [1;94mpackages[00m
+│   │       │       │   └── f1tenth_gazebo_plugins
+│   │       │       └── [1;94mparent_prefix_path[00m
+│   │       │           └── f1tenth_gazebo_plugins
+│   │       ├── [1;94mcolcon-core[00m
+│   │       │   └── [1;94mpackages[00m
+│   │       │       └── f1tenth_gazebo_plugins
+│   │       └── [1;94mf1tenth_gazebo_plugins[00m
+│   │           ├── [1;94mcmake[00m
+│   │           │   ├── ament_cmake_export_libraries-extras.cmake
+│   │           │   ├── f1tenth_gazebo_pluginsConfig.cmake
+│   │           │   └── f1tenth_gazebo_pluginsConfig-version.cmake
+│   │           ├── [1;94menvironment[00m
+│   │           │   ├── ament_prefix_path.dsv
+│   │           │   ├── ament_prefix_path.sh
+│   │           │   ├── f1tenth_gazebo_plugins.sh
+│   │           │   ├── library_path.dsv
+│   │           │   ├── library_path.sh
+│   │           │   ├── path.dsv
+│   │           │   └── path.sh
+│   │           ├── [1;94mhook[00m
+│   │           │   ├── cmake_prefix_path.dsv
+│   │           │   ├── cmake_prefix_path.ps1
+│   │           │   └── cmake_prefix_path.sh
+│   │           ├── local_setup.bash
+│   │           ├── local_setup.dsv
+│   │           ├── local_setup.sh
+│   │           ├── local_setup.zsh
+│   │           ├── package.bash
+│   │           ├── package.dsv
+│   │           ├── package.ps1
+│   │           ├── package.sh
+│   │           ├── package.xml
+│   │           └── package.zsh
+│   ├── local_setup.bash
+│   ├── local_setup.ps1
+│   ├── local_setup.sh
+│   ├── _local_setup_util_ps1.py
+│   ├── _local_setup_util_sh.py
+│   ├── local_setup.zsh
+│   ├── setup.bash
+│   ├── setup.ps1
+│   ├── setup.sh
+│   └── setup.zsh
+├── [1;94mlog[00m
+│   ├── [1;94mbuild_2022-08-12_16-48-13[00m
+│   │   ├── events.log
+│   │   ├── [1;94mf1tenth_gazebo_plugins[00m
+│   │   │   ├── command.log
+│   │   │   ├── stderr.log
+│   │   │   ├── stdout.log
+│   │   │   ├── stdout_stderr.log
+│   │   │   └── streams.log
+│   │   └── logger_all.log
+│   ├── COLCON_IGNORE
+│   ├── [01;36mlatest[00m -> [1;94mlatest_build[00m
+│   └── [01;36mlatest_build[00m -> [1;94mbuild_2022-08-12_16-48-13[00m
+├── package.xml
+├── README.md
+├── [1;94msrc[00m
+│   ├── [1;94mf1tenth_description[00m
+│   │   ├── CMakeLists.txt
+│   │   ├── [1;94minclude[00m
+│   │   │   └── [1;94mf1tenth_description[00m
+│   │   ├── package.xml
+│   │   ├── [1;94mrobots[00m
+│   │   ├── [1;94msrc[00m
+│   │   └── [1;94murdf[00m
+│   │       └── [1;94mf1tenth[00m
+│   │           ├── model.config
+│   │           ├── model.sdf
+│   │           └── model.urdf
+│   ├── [1;94mf1tenth_gazebo[00m
+│   │   ├── CMakeLists.txt
+│   │   ├── [1;94menv-hooks[00m
+│   │   │   └── f1tenth_gazebo.sh.in
+│   │   ├── [1;94minclude[00m
+│   │   │   └── [1;94mf1tenth_gazebo[00m
+│   │   ├── [1;94mlaunch[00m
+│   │   │   └── f1tenth.launch.py
+│   │   ├── [1;94mmodels[00m
+│   │   │   └── [1;94mf1tenth[00m
+│   │   │       ├── model.config
+│   │   │       ├── model.sdf
+│   │   │       └── model.urdf
+│   │   ├── package.xml
+│   │   ├── README.md
+│   │   ├── [1;94msrc[00m
+│   │   └── [1;94mworlds[00m
+│   │       └── f1tenth_empty.world
+│   └── [1;94mf1tenth_gazebo_plugins[00m
+│       ├── CMakeLists.txt
+│       ├── [1;94menv-hooks[00m
+│       │   └── f1tenth_gazebo_plugins.sh.in
+│       ├── [1;94minclude[00m
+│       │   └── [1;94mf1tenth_gazebo_plugins[00m
+│       │       └── f1tenth_kinematic_bicycle_model.hpp
+│       ├── package.xml
+│       └── [1;94msrc[00m
+│           └── f1tenth_kinematic_bicycle_model.cpp
+└── [1;94mtheory[00m
+    ├── animation.py
+    ├── bicycle model.pdf
+    ├── Chapter2aVehicleDynamicsModeling.pdf
+    ├── kinematic_bicycle.py
+    ├── pygame_kbm.py
+    ├── simulation.py
+    └── Steering dynamics.pdf
+
+74 directories, 151 files
