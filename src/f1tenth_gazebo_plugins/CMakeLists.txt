@@ -9,10 +9,14 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(gazebo_dev REQUIRED)
 find_package(gazebo_ros REQUIRED)
+find_package(ackermann_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
 
 link_directories(${gazebo_dev_LIBRARY_DIRS})
 
-# f1tenth_kinematic_bicycle_model
+###################################
+# f1tenth_kinematic_bicycle_model #
+###################################
 add_library(f1tenth_kinematic_bicycle_model SHARED
   src/f1tenth_kinematic_bicycle_model.cpp
 )
@@ -31,6 +35,24 @@ if(ENABLE_PROFILER)
   target_link_libraries(f1tenth_kinematic_bicycle_model ${ignition-common3_LIBRARIES})
 endif()
 
+# f1tenth_model_plugin
+add_library(f1tenth_model_plugin SHARED
+  src/f1tenth_model_plugin.cpp
+)
+target_include_directories(f1tenth_model_plugin PUBLIC include)
+
+ament_target_dependencies(f1tenth_model_plugin
+  "gazebo_dev"
+  "gazebo_ros"
+  "rclcpp"
+  "ackermann_msgs"
+)
+ament_export_libraries(f1tenth_model_plugin)
+if(ENABLE_PROFILER)
+  target_include_directories(f1tenth_model_plugin PUBLIC ${ignition-common3_INCLUDE_DIRS})
+  target_link_libraries(f1tenth_model_plugin ${ignition-common3_LIBRARIES})
+endif()
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -44,5 +66,14 @@ endif()
 
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/${PROJECT_NAME}.sh.in")
 
+install(DIRECTORY include/
+        DESTINATION include)
+
+install(TARGETS
+  f1tenth_kinematic_bicycle_model
+  f1tenth_model_plugin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
 
 ament_package()
