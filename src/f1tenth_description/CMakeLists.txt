@@ -25,7 +25,6 @@ endif()
 install(
   DIRECTORY
     urdf
-    robots
   DESTINATION
     share/${PROJECT_NAME}/
 )
