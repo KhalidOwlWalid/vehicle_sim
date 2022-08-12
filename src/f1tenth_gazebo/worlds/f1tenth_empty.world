@@ -10,5 +10,9 @@
       <uri>model://ground_plane</uri>
     </include>
 
+    <include>
+      <uri>model://f1tenth</uri>
+    </include>
+
   </world>
 </sdf>

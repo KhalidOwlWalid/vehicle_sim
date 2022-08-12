@@ -1,0 +1,7 @@
+# generated from f1tenth_description/env-hooks/dolly_gazebo.sh.in
+
+cmd="ros2 pkg prefix @PROJECT_NAME@"
+F1TENTH_SHARE=$(eval "$cmd")
+
+ament_prepend_unique_value GAZEBO_MODEL_PATH "$F1TENTH_SHARE/share/@PROJECT_NAME@/models"
+ament_prepend_unique_value GAZEBO_RESOURCE_PATH "$F1TENTH_SHARE/share/@PROJECT_NAME@/worlds"
