@@ -28,6 +28,7 @@ def generate_launch_description():
 
     pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
     pkg_f1tenth_gazebo = get_package_share_directory('f1tenth_gazebo')
+    pkg_f1tenth_description = get_package_share_directory('f1tenth_description')
 
     # Gazebo launch
     gazebo = IncludeLaunchDescription(
@@ -36,18 +37,16 @@ def generate_launch_description():
         )
     )
     
-    # spawn_entity = Node(
-    #     package='gazebo_ros',
-    #     executable='spawn_entity.py',
-    #     output='screen',
-    #     arguments=['-entity', 'f1tenth', '-file', urdf_file_path],
-    # )
+    urdf_file_path = os.path.join(pkg_f1tenth_description, 'urdf', 'f1tenth', 'model.urdf')
+    
+    spawn_entity = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        output='screen',
+        arguments=['-entity', 'f1tenth', '-file', urdf_file_path, '-x', '1.0', '-y', '1.0', '-z', '3.0'],
+    )
 
     return LaunchDescription([
-        DeclareLaunchArgument(
-          'world',
-          default_value=[os.path.join(pkg_f1tenth_gazebo, 'worlds', 'f1tenth_empty.world'), ''],
-          description='SDF world file'),
         gazebo,
-        # spawn_entity,
+        spawn_entity,
     ])
