@@ -58,7 +58,7 @@ public:
   void OnUpdate(const gazebo::common::UpdateInfo & info);
 
   /// A pointer to the GazeboROS node.
-  gazebo_ros::Node::SharedPtr ros_node_;
+  gazebo_ros::Node::SharedPtr ros_node_{nullptr};
 
   /// Joint state publisher.
   rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr drive_topic_pub_;
@@ -71,6 +71,11 @@ public:
 
   /// Pointer to the update event connection.
   gazebo::event::ConnectionPtr update_connection_;
+
+  // Pointer to model
+  gazebo::physics::ModelPtr model_;
+
+  ignition::math::Pose3d model_world_pos_;
 };
 
 GazeboRosF1TenthModel::GazeboRosF1TenthModel()
@@ -86,6 +91,8 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
 {
   // ROS node
   impl_->ros_node_ = gazebo_ros::Node::Get(sdf);
+
+  impl_->model_ = model;
 
   // Get QoS profiles
   const gazebo_ros::QoS & qos = impl_->ros_node_->get_qos();
@@ -126,9 +133,6 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
 
 void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & info)
 {
-#ifdef IGN_PROFILER_ENABLE
-  IGN_PROFILE("GazeboRosF1TenthModelPrivate::OnUpdate");
-#endif
   gazebo::common::Time current_time = info.simTime;
 
   // If the world is reset, for example
@@ -144,7 +148,10 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
     return;
   }
 
-  std::cout << "Test" << std::endl;
+  // TODO(Khalid) : Find the offset of the car with respect to the world frame
+  model_world_pos_ = model_->WorldPose();
+
+  RCLCPP_INFO(ros_node_->get_logger(), "%f, %f, %f", model_world_pos_.Pos()[0], model_world_pos_.Pos()[1], model_world_pos_.Pos()[2]);
 
   // Update time
   last_update_time_ = current_time;

@@ -50,24 +50,8 @@ class GazeboRosF1TenthModelPrivate;
     <plugin name="gazebo_ros_joint_state_publisher"
         filename="libgazebo_ros_joint_state_publisher.so">
 
-      <ros>
-
-        <!-- Add a namespace -->
-        <namespace>/ny_namespace</namespace>
-
-        <!-- Remap the default topic -->
-        <remapping>joint_states:=my_joint_states</remapping>
-
-      </ros>
-
-      <!-- Update rate in Hertz -->
-      <update_rate>2</update_rate>
-
-      <!-- Name of joints in the model whose states will be published. -->
-      <joint_name>left_wheel</joint_name>
-      <joint_name>right_wheel</joint_name>
-      <joint_name>elbow</joint_name>
-      <joint_name>shoulder</joint_name>
+      <update_rate>100.0</update_rate>
+      <drive_topic>cmd</drive_topic>
 
     </plugin>
   \endcode
