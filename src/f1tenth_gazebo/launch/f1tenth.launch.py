@@ -43,7 +43,13 @@ def generate_launch_description():
         package='gazebo_ros',
         executable='spawn_entity.py',
         output='screen',
-        arguments=['-entity', 'f1tenth', '-file', urdf_file_path, '-x', '1.0', '-y', '1.0', '-z', '3.0'],
+        arguments=[
+            '-entity', 'f1tenth',
+            '-file', urdf_file_path,
+            '-x', '0.0',
+            '-y', '0.0',
+            '-z', '0.0',
+            '-timeout', '30.0'],
     )
 
     return LaunchDescription([

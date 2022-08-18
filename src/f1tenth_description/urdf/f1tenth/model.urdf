@@ -228,7 +228,7 @@
 
       <!-- Name of joints in the model whose states will be published. -->
       <drive_topic>cmd</drive_topic>
-      <update_rate>100.0</update_rate>
+      <update_rate>60.0</update_rate>
 
     </plugin>
   </gazebo>
