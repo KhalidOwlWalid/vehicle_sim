@@ -44,9 +44,13 @@
 #include <rclcpp/rclcpp.hpp>
 #include <ackermann_msgs/msg/ackermann_drive_stamped.hpp>
 
+#include <ignition/math/Vector3.hh>
+#include <ignition/math/Pose3.hh>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <f1tenth_gazebo_plugins/input.hpp>
 
 namespace gazebo_plugins
 {
@@ -60,14 +64,20 @@ public:
   /// A pointer to the GazeboROS node.
   gazebo_ros::Node::SharedPtr ros_node_{nullptr};
 
-  /// Joint state publisher.
+  /// Command publisher
   rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr drive_topic_pub_;
 
-  /// Period in seconds
+  // Command Subscription
+  rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr sub_cmd_;
+
+  /// Update period of the simulation
   double update_period_;
 
   /// Keep last time an update was published
-  gazebo::common::Time last_update_time_;
+  gazebo::common::Time last_sim_update_time_;
+
+  // Keep track of last cmd time
+  gazebo::common::Time last_cmd_time_;
 
   /// Pointer to the update event connection.
   gazebo::event::ConnectionPtr update_connection_;
@@ -76,6 +86,21 @@ public:
   gazebo::physics::ModelPtr model_;
 
   ignition::math::Pose3d model_world_pos_;
+  ignition::math::Pose3d cur_pos;
+
+  // Command queue from cmd callback
+  std::queue<std::shared_ptr<ackermann_msgs::msg::AckermannDriveStamped>> command_Q_;
+  std::queue<gazebo::common::Time> command_time_Q_;
+
+  // Model input
+  f1tenth::model::Input desired_input_;
+  f1tenth::model::Input actual_input_;
+
+  double max_steering_rate;
+  double max_steering_angle;
+
+  // cmd callback function
+  void OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
 };
 
 GazeboRosF1TenthModel::GazeboRosF1TenthModel()
@@ -120,41 +145,71 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
     impl_->update_period_ = 0.0;
   }
 
-  impl_->last_update_time_ = model->GetWorld()->SimTime();
+  impl_->max_steering_angle = 1.22;
+  impl_->max_steering_rate = 1.0;
 
-  // Joint state publisher
+  impl_->last_sim_update_time_ = model->GetWorld()->SimTime();
+
+  // Drive topic publisher
   impl_->drive_topic_pub_ = impl_->ros_node_->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>(
     drive_topic_, qos.get_publisher_qos(drive_topic_, rclcpp::QoS(1000)));
+
+  impl_->sub_cmd_ = impl_->ros_node_->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
+    "/cmd", 1,  std::bind(&GazeboRosF1TenthModelPrivate::OnCmd, impl_.get(), std::placeholders::_1));
 
   // Callback on every iteration
   impl_->update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
     std::bind(&GazeboRosF1TenthModelPrivate::OnUpdate, impl_.get(), std::placeholders::_1));
+
+  // TODO(Khalid) : Find the offset of the car with respect to the world frame
+  impl_->model_world_pos_ = model->WorldPose();
 }
 
 void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & info)
 {
-  gazebo::common::Time current_time = info.simTime;
+  gazebo::common::Time current_sim_time = info.simTime;
 
   // If the world is reset, for example
-  if (current_time < last_update_time_) {
+  if (current_sim_time < last_sim_update_time_) {
     RCLCPP_INFO(ros_node_->get_logger(), "Negative sim time difference detected.");
-    last_update_time_ = current_time;
+    last_sim_update_time_ = current_sim_time;
   }
 
-  // Check period
-  double seconds_since_last_update = (current_time - last_update_time_).Double();
-
-  if (seconds_since_last_update < update_period_) {
+  // Check if simulation needs to be updated (seconds since last sim update)
+  double dt = (current_sim_time - last_sim_update_time_).Double();
+  if (dt < update_period_) {
     return;
   }
 
-  // TODO(Khalid) : Find the offset of the car with respect to the world frame
-  model_world_pos_ = model_->WorldPose();
+  // Check if there is any command in queue
+  if (!command_Q_.empty()) {
 
-  RCLCPP_INFO(ros_node_->get_logger(), "%f, %f, %f", model_world_pos_.Pos()[0], model_world_pos_.Pos()[1], model_world_pos_.Pos()[2]);
+    // Get the desired input command (acceleration and steering angle)
+    std::shared_ptr<ackermann_msgs::msg::AckermannDriveStamped> cmd_queue = command_Q_.front();
+
+    desired_input_.acceleration = cmd_queue->drive.acceleration;
+    desired_input_.steering_angle = cmd_queue->drive.steering_angle;
+
+    // Remove the cmd that have been assigned
+    command_Q_.pop();
+  }
+
+  // Note that dt will not be constant
+  actual_input_.steering_angle +=
+      (desired_input_.steering_angle - actual_input_.steering_angle >= 0 ? 1 : -1) *
+      std::min(max_steering_rate * dt, std::abs(desired_input_.steering_angle - actual_input_.steering_angle));
+
+  std::cout << actual_input_.steering_angle << std::endl;
+  std::cout << "dt: " << dt << std::endl;
 
   // Update time
-  last_update_time_ = current_time;
+  last_sim_update_time_ = current_sim_time;
+}
+
+void GazeboRosF1TenthModelPrivate::OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg) {
+  command_Q_ .push(msg);
+  command_time_Q_.push(model_->GetWorld()->SimTime());
+  last_cmd_time_ = model_->GetWorld()->SimTime();
 }
 
 GZ_REGISTER_MODEL_PLUGIN(GazeboRosF1TenthModel)
