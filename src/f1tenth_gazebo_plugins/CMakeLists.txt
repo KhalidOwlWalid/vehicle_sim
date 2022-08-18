@@ -12,6 +12,10 @@ find_package(gazebo_ros REQUIRED)
 find_package(ackermann_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
+# Refer : https://stackoverflow.com/questions/40223903/cmake-how-to-include-headers-without-sources
+add_library(input INTERFACE)
+target_include_directories(input INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
 link_directories(${gazebo_dev_LIBRARY_DIRS})
 
 ###################################
@@ -40,6 +44,7 @@ add_library(f1tenth_model_plugin SHARED
   src/f1tenth_model_plugin.cpp
 )
 target_include_directories(f1tenth_model_plugin PUBLIC include)
+target_link_libraries(f1tenth_model_plugin input)
 
 ament_target_dependencies(f1tenth_model_plugin
   "gazebo_dev"
