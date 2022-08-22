@@ -32,6 +32,7 @@
 
 #include <gazebo/common/Events.hh>
 #include <gazebo/common/Time.hh>
+#include <gazebo/common/PID.hh>
 #include <gazebo/physics/Joint.hh>
 #include <gazebo/physics/Model.hh>
 #include <gazebo/physics/World.hh>
@@ -57,6 +58,13 @@ namespace gazebo_plugins
 class GazeboRosF1TenthModelPrivate
 {
 public:
+
+  enum {
+    FRONT_RIGHT,
+
+    FRONT_LEFT
+  };
+
   /// Callback to be called at every simulation iteration.
   /// \param[in] info Updated simulation info.
   void OnUpdate(const gazebo::common::UpdateInfo & info);
@@ -96,8 +104,29 @@ public:
   f1tenth::model::Input desired_input_;
   f1tenth::model::Input actual_input_;
 
+  // TODO(Khalid) :  Use sdf to define this
   double max_steering_rate;
   double max_steering_angle;
+
+  /// \brief Front Left Steering Joint
+  gazebo::physics:: JointPtr frontLeftSteeringJoint;
+
+  /// \brief Front Right wheel steering joint
+  gazebo::physics:: JointPtr frontRightSteeringJoint;
+
+  /// \brief PiD Control for the front left wheel steering input
+  gazebo::common::PID frontLeftWheelSteeringPID;
+
+  /// \brief PID Control for the front right wheel steering input
+  gazebo::common::PID frontRightWheelSteeringPID;
+
+  // Pointer to wheel joints
+  std::vector<gazebo::physics::JointPtr> joints_;
+
+  double frontLeftSteeringAngle = 0;
+  double frontRightSteeringAngle = 0;
+
+  double frontLeftSteeringCmd = 0;
 
   // cmd callback function
   void OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
@@ -139,6 +168,26 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
     update_rate = sdf->GetElement("update_rate")->Get<double>();
   }
 
+  std::string frontLeftSteeringJoint = impl_->model_->GetName() + "::"
+    + sdf->Get<std::string>("front_left_steer_joint");
+  impl_->frontLeftSteeringJoint =
+    impl_->model_->GetJoint(frontLeftSteeringJoint);
+  if (!impl_->frontLeftSteeringJoint)
+  {
+    std::cerr << "could not find front left steering joint" <<std::endl;
+    return;
+  }
+
+  std::string frontRightSteeringJoint = impl_->model_->GetName() + "::"
+    + sdf->Get<std::string>("front_right_steer_joint");
+  impl_->frontRightSteeringJoint =
+    impl_->model_->GetJoint(frontRightSteeringJoint);
+  if (!impl_->frontRightSteeringJoint)
+  {
+    std::cerr << "could not find front right steering joint" <<std::endl;
+    return;
+  }
+
   if (update_rate > 0.0) {
     impl_->update_period_ = 1.0 / update_rate;
   } else {
@@ -160,6 +209,52 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
   // Callback on every iteration
   impl_->update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
     std::bind(&GazeboRosF1TenthModelPrivate::OnUpdate, impl_.get(), std::placeholders::_1));
+
+  // TODO(Khalid): Implement PID system
+  std::string paramName;
+  double paramDefault;
+
+  paramName = "flwheel_steering_p_gain";
+  paramDefault = 0;
+  if (sdf->HasElement(paramName))
+    impl_->frontLeftWheelSteeringPID.SetPGain(sdf->Get<double>(paramName));
+  else
+    impl_->frontLeftWheelSteeringPID.SetPGain(paramDefault);
+
+  paramName = "flwheel_steering_i_gain";
+  paramDefault = 0;
+  if (sdf->HasElement(paramName))
+    impl_->frontLeftWheelSteeringPID.SetIGain(sdf->Get<double>(paramName));
+  else
+    impl_->frontLeftWheelSteeringPID.SetIGain(paramDefault);
+
+  paramName = "flwheel_steering_d_gain";
+  paramDefault = 0;
+  if (sdf->HasElement(paramName))
+    impl_->frontLeftWheelSteeringPID.SetDGain(sdf->Get<double>(paramName));
+  else
+    impl_->frontLeftWheelSteeringPID.SetDGain(paramDefault);
+
+  paramName = "frwheel_steering_p_gain";
+  paramDefault = 0;
+  if (sdf->HasElement(paramName))
+    impl_->frontRightWheelSteeringPID.SetPGain(sdf->Get<double>(paramName));
+  else
+    impl_->frontRightWheelSteeringPID.SetPGain(paramDefault);
+
+  paramName = "frwheel_steering_i_gain";
+  paramDefault = 0;
+  if (sdf->HasElement(paramName))
+    impl_->frontRightWheelSteeringPID.SetIGain(sdf->Get<double>(paramName));
+  else
+    impl_->frontRightWheelSteeringPID.SetIGain(paramDefault);
+
+  paramName = "frwheel_steering_d_gain";
+  paramDefault = 0;
+  if (sdf->HasElement(paramName))
+    impl_->frontRightWheelSteeringPID.SetDGain(sdf->Get<double>(paramName));
+  else
+    impl_->frontRightWheelSteeringPID.SetDGain(paramDefault);
 
   // TODO(Khalid) : Find the offset of the car with respect to the world frame
   impl_->model_world_pos_ = model->WorldPose();
@@ -194,13 +289,13 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
     command_Q_.pop();
   }
 
-  // Note that dt will not be constant
   actual_input_.steering_angle +=
       (desired_input_.steering_angle - actual_input_.steering_angle >= 0 ? 1 : -1) *
       std::min(max_steering_rate * dt, std::abs(desired_input_.steering_angle - actual_input_.steering_angle));
 
-  std::cout << actual_input_.steering_angle << std::endl;
-  std::cout << "dt: " << dt << std::endl;
+  // Update wheel steering position based on steering angle
+  frontLeftSteeringJoint->SetPosition(0, actual_input_.steering_angle);
+  frontRightSteeringJoint->SetPosition(0, actual_input_.steering_angle);
 
   // Update time
   last_sim_update_time_ = current_sim_time;
