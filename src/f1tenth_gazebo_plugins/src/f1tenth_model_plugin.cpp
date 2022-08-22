@@ -34,6 +34,7 @@
 #include <gazebo/common/Time.hh>
 #include <gazebo/common/PID.hh>
 #include <gazebo/physics/Joint.hh>
+#include <gazebo/physics/Link.hh>
 #include <gazebo/physics/Model.hh>
 #include <gazebo/physics/World.hh>
 #include <f1tenth_gazebo_plugins/f1tenth_model_plugin.hpp>
@@ -52,6 +53,7 @@
 #include <vector>
 
 #include <f1tenth_gazebo_plugins/input.hpp>
+#include <f1tenth_gazebo_plugins/state.hpp>
 
 namespace gazebo_plugins
 {
@@ -109,10 +111,10 @@ public:
   double max_steering_angle;
 
   /// \brief Front Left Steering Joint
-  gazebo::physics:: JointPtr frontLeftSteeringJoint;
+  gazebo::physics::JointPtr frontLeftSteeringJointPtr;
 
   /// \brief Front Right wheel steering joint
-  gazebo::physics:: JointPtr frontRightSteeringJoint;
+  gazebo::physics::JointPtr frontRightSteeringJointPtr;
 
   /// \brief PiD Control for the front left wheel steering input
   gazebo::common::PID frontLeftWheelSteeringPID;
@@ -120,13 +122,16 @@ public:
   /// \brief PID Control for the front right wheel steering input
   gazebo::common::PID frontRightWheelSteeringPID;
 
-  // Pointer to wheel joints
-  std::vector<gazebo::physics::JointPtr> joints_;
+  /// \brief Base link
+  gazebo::physics::LinkPtr baseLinkPtr;
 
   double frontLeftSteeringAngle = 0;
   double frontRightSteeringAngle = 0;
 
   double frontLeftSteeringCmd = 0;
+
+  gazebo_plugin::f1tenth::state state_;
+  ignition::math::Pose3d offset_;
 
   // cmd callback function
   void OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
@@ -168,23 +173,32 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
     update_rate = sdf->GetElement("update_rate")->Get<double>();
   }
 
-  std::string frontLeftSteeringJoint = impl_->model_->GetName() + "::"
+  std::string frontLeftSteeringJointName = impl_->model_->GetName() + "::"
     + sdf->Get<std::string>("front_left_steer_joint");
-  impl_->frontLeftSteeringJoint =
-    impl_->model_->GetJoint(frontLeftSteeringJoint);
-  if (!impl_->frontLeftSteeringJoint)
+  impl_->frontLeftSteeringJointPtr =
+    impl_->model_->GetJoint(frontLeftSteeringJointName);
+  if (!impl_->frontLeftSteeringJointPtr)
   {
     std::cerr << "could not find front left steering joint" <<std::endl;
     return;
   }
 
-  std::string frontRightSteeringJoint = impl_->model_->GetName() + "::"
+  std::string frontRightSteeringJointName = impl_->model_->GetName() + "::"
     + sdf->Get<std::string>("front_right_steer_joint");
-  impl_->frontRightSteeringJoint =
-    impl_->model_->GetJoint(frontRightSteeringJoint);
-  if (!impl_->frontRightSteeringJoint)
+  impl_->frontRightSteeringJointPtr =
+    impl_->model_->GetJoint(frontRightSteeringJointName);
+  if (!impl_->frontRightSteeringJointPtr)
   {
     std::cerr << "could not find front right steering joint" <<std::endl;
+    return;
+  }
+
+  std::string baseLinkName = impl_->model_->GetName() + "::"
+    + sdf->Get<std::string>("base_link");
+  impl_->baseLinkPtr = impl_->model_->GetLink(baseLinkName);
+  if (!impl_->baseLinkPtr)
+  {
+    std::cerr << "could not find base link" << std::endl;
     return;
   }
 
@@ -210,54 +224,57 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
   impl_->update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
     std::bind(&GazeboRosF1TenthModelPrivate::OnUpdate, impl_.get(), std::placeholders::_1));
 
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // TODO(Khalid): Implement PID system
-  std::string paramName;
-  double paramDefault;
+  // std::string paramName;
+  // double paramDefault;
 
-  paramName = "flwheel_steering_p_gain";
-  paramDefault = 0;
-  if (sdf->HasElement(paramName))
-    impl_->frontLeftWheelSteeringPID.SetPGain(sdf->Get<double>(paramName));
-  else
-    impl_->frontLeftWheelSteeringPID.SetPGain(paramDefault);
+  // paramName = "flwheel_steering_p_gain";
+  // paramDefault = 0;
+  // if (sdf->HasElement(paramName))
+  //   impl_->frontLeftWheelSteeringPID.SetPGain(sdf->Get<double>(paramName));
+  // else
+  //   impl_->frontLeftWheelSteeringPID.SetPGain(paramDefault);
 
-  paramName = "flwheel_steering_i_gain";
-  paramDefault = 0;
-  if (sdf->HasElement(paramName))
-    impl_->frontLeftWheelSteeringPID.SetIGain(sdf->Get<double>(paramName));
-  else
-    impl_->frontLeftWheelSteeringPID.SetIGain(paramDefault);
+  // paramName = "flwheel_steering_i_gain";
+  // paramDefault = 0;
+  // if (sdf->HasElement(paramName))
+  //   impl_->frontLeftWheelSteeringPID.SetIGain(sdf->Get<double>(paramName));
+  // else
+  //   impl_->frontLeftWheelSteeringPID.SetIGain(paramDefault);
 
-  paramName = "flwheel_steering_d_gain";
-  paramDefault = 0;
-  if (sdf->HasElement(paramName))
-    impl_->frontLeftWheelSteeringPID.SetDGain(sdf->Get<double>(paramName));
-  else
-    impl_->frontLeftWheelSteeringPID.SetDGain(paramDefault);
+  // paramName = "flwheel_steering_d_gain";
+  // paramDefault = 0;
+  // if (sdf->HasElement(paramName))
+  //   impl_->frontLeftWheelSteeringPID.SetDGain(sdf->Get<double>(paramName));
+  // else
+  //   impl_->frontLeftWheelSteeringPID.SetDGain(paramDefault);
 
-  paramName = "frwheel_steering_p_gain";
-  paramDefault = 0;
-  if (sdf->HasElement(paramName))
-    impl_->frontRightWheelSteeringPID.SetPGain(sdf->Get<double>(paramName));
-  else
-    impl_->frontRightWheelSteeringPID.SetPGain(paramDefault);
+  // paramName = "frwheel_steering_p_gain";
+  // paramDefault = 0;
+  // if (sdf->HasElement(paramName))
+  //   impl_->frontRightWheelSteeringPID.SetPGain(sdf->Get<double>(paramName));
+  // else
+  //   impl_->frontRightWheelSteeringPID.SetPGain(paramDefault);
 
-  paramName = "frwheel_steering_i_gain";
-  paramDefault = 0;
-  if (sdf->HasElement(paramName))
-    impl_->frontRightWheelSteeringPID.SetIGain(sdf->Get<double>(paramName));
-  else
-    impl_->frontRightWheelSteeringPID.SetIGain(paramDefault);
+  // paramName = "frwheel_steering_i_gain";
+  // paramDefault = 0;
+  // if (sdf->HasElement(paramName))
+  //   impl_->frontRightWheelSteeringPID.SetIGain(sdf->Get<double>(paramName));
+  // else
+  //   impl_->frontRightWheelSteeringPID.SetIGain(paramDefault);
 
-  paramName = "frwheel_steering_d_gain";
-  paramDefault = 0;
-  if (sdf->HasElement(paramName))
-    impl_->frontRightWheelSteeringPID.SetDGain(sdf->Get<double>(paramName));
-  else
-    impl_->frontRightWheelSteeringPID.SetDGain(paramDefault);
+  // paramName = "frwheel_steering_d_gain";
+  // paramDefault = 0;
+  // if (sdf->HasElement(paramName))
+  //   impl_->frontRightWheelSteeringPID.SetDGain(sdf->Get<double>(paramName));
+  // else
+  //   impl_->frontRightWheelSteeringPID.SetDGain(paramDefault);
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // TODO(Khalid) : Find the offset of the car with respect to the world frame
-  impl_->model_world_pos_ = model->WorldPose();
+  impl_->offset_ = impl_->model_->WorldPose();
 }
 
 void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & info)
@@ -282,7 +299,7 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
     // Get the desired input command (acceleration and steering angle)
     std::shared_ptr<ackermann_msgs::msg::AckermannDriveStamped> cmd_queue = command_Q_.front();
 
-    desired_input_.acceleration = cmd_queue->drive.acceleration;
+    desired_input_.speed = cmd_queue->drive.speed;
     desired_input_.steering_angle = cmd_queue->drive.steering_angle;
 
     // Remove the cmd that have been assigned
@@ -294,8 +311,15 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
       std::min(max_steering_rate * dt, std::abs(desired_input_.steering_angle - actual_input_.steering_angle));
 
   // Update wheel steering position based on steering angle
-  frontLeftSteeringJoint->SetPosition(0, actual_input_.steering_angle);
-  frontRightSteeringJoint->SetPosition(0, actual_input_.steering_angle);
+  frontLeftSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
+  frontRightSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
+
+  ignition::math::Vector3d base_link_velocity = baseLinkPtr->RelativeLinearVel();
+
+  std::cout << base_link_velocity[0] << std::endl;
+
+  // Implement kinematic model here
+  // updateState(actual_input_, )
 
   // Update time
   last_sim_update_time_ = current_sim_time;

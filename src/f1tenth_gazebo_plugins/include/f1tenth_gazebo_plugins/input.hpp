@@ -8,11 +8,12 @@ namespace model {
     struct Input {
         
         // Initialized Input acceleration and steering angle
-        Input() : acceleration(0.0), steering_angle(0.0) {};
+        Input() : acceleration(0.0), steering_angle(0.0), speed(0.0) {};
 
         // Input parameter
         double acceleration;
         double steering_angle;
+        double speed;
     };
 } // namespace model
 } // namespace f1tenth
