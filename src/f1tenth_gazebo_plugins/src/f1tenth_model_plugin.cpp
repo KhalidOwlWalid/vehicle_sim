@@ -107,8 +107,8 @@ public:
   f1tenth::model::Input actual_input_;
 
   // TODO(Khalid) :  Use sdf to define this
-  double max_steering_rate;
-  double max_steering_angle;
+  double max_steering_rate = 1.0;
+  double max_steering_angle = 1.22;
 
   /// \brief Front Left Steering Joint
   gazebo::physics::JointPtr frontLeftSteeringJointPtr;
@@ -132,6 +132,9 @@ public:
 
   gazebo_plugin::f1tenth::state state_;
   ignition::math::Pose3d offset_;
+
+  double x = 0;
+  double y = 0;
 
   // cmd callback function
   void OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
@@ -207,9 +210,6 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
   } else {
     impl_->update_period_ = 0.0;
   }
-
-  impl_->max_steering_angle = 1.22;
-  impl_->max_steering_rate = 1.0;
 
   impl_->last_sim_update_time_ = model->GetWorld()->SimTime();
 
@@ -314,12 +314,36 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   frontLeftSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
   frontRightSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
 
-  ignition::math::Vector3d base_link_velocity = baseLinkPtr->RelativeLinearVel();
+  // ignition::math::Vector3d actual_speed = baseLinkPtr->RelativeLinearVel();
 
-  std::cout << base_link_velocity[0] << std::endl;
+  double max_speed = 5.0;
+  actual_input_.speed += std::min(max_speed * dt, std::abs(desired_input_.speed - actual_input_.speed));
+
+  std::cout << "Actual input speed: " << actual_input_.speed << " | Steering angle: " << actual_input_.steering_angle << std::endl;
 
   // Implement kinematic model here
   // updateState(actual_input_, )
+  double x_dot = actual_input_.speed * cos(actual_input_.steering_angle);
+  double y_dot = actual_input_.speed * sin(actual_input_.steering_angle);
+
+  double radius = 0.5 / atan(actual_input_.steering_angle);
+
+  double angular_rate = std::min(actual_input_.speed / radius, max_steering_rate);
+
+  // remember that yaw needs to be taken into account for x_dot and y_dot
+  x += offset_.X() + x_dot * dt;
+  y += offset_.Y() + y_dot * dt;
+  double z = 0.0;
+
+  std::cout << "x: " << x << " | y: " << y << " | angular_rate: " << angular_rate << std::endl;
+
+  const ignition::math::Pose3d pose(x, y, z, 0, 0.0, 0.0);
+  const ignition::math::Vector3d vel(x_dot, y_dot, 0.0);
+  const ignition::math::Vector3d angular(0.0, 0.0, angular_rate);
+
+  model_->SetWorldPose(pose);
+  model_->SetAngularVel(angular);
+  model_->SetLinearVel(vel);
 
   // Update time
   last_sim_update_time_ = current_sim_time;
