@@ -133,18 +133,15 @@ public:
   /// \brief Base link
   gazebo::physics::LinkPtr baseLinkPtr;
 
+  /// \brief Stores the state of the car
+  utils::State car_state_; // Default construct - initialize everything to 0.0
+  utils::position car_initial_offset_;
+
+
   double frontLeftSteeringAngle = 0;
   double frontRightSteeringAngle = 0;
 
   double frontLeftSteeringCmd = 0;
-
-  gazebo_plugin::f1tenth::state state_;
-  ignition::math::Pose3d offset_;
-
-  double x = 0;
-  double y = 0;
-  double phi = 0;
-  double speed = 0;
 
   // cmd callback function
   void OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
@@ -280,7 +277,14 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
   // TODO(Khalid): Implement a PID control. refer https://github.com/osrf/car_demo/blob/master/car_demo/plugins/PriusHybridPlugin.cc#L1033
 
   // TODO(Khalid) : Find the offset of the car with respect to the world frame
-  impl_->offset_ = impl_->model_->WorldPose();
+  impl_->car_initial_offset_.x = impl_->model_->WorldPose().X();
+  impl_->car_initial_offset_.y = impl_->model_->WorldPose().Y();
+
+  // Initialize the car state in its respective coordinate position upon load
+  impl_->car_state_.p.x = impl_->car_initial_offset_.x;
+  impl_->car_state_.p.y = impl_->car_initial_offset_.y;
+
+  RCLCPP_INFO(impl_->ros_node_->get_logger(), "Model plugin loaded.");
 }
 
 void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & info)
@@ -332,15 +336,15 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   double x_dot = v_x * cos(yaw) - v_y * sin(yaw);
   double y_dot = v_x * sin(yaw) + v_y * cos(yaw);
   
-  x += x_dot * dt;
-  y += y_dot * dt;
-  phi += phi_dot * dt;
+  car_state_.p.x += x_dot * dt;
+  car_state_.p.y += y_dot * dt;
+  car_state_.o.yaw += phi_dot * dt;
 
-  ignition::math::Pose3d pose(x, y, 0, 0, 0, phi);
+  ignition::math::Pose3d pose(car_state_.p.x, car_state_.p.y, 0.0, 0.0, 0.0, car_state_.o.yaw);
   ignition::math::Vector3d vel(x_dot, y_dot, 0);
   ignition::math::Vector3d ang(0, 0, phi_dot);
 
-  RCLCPP_INFO(ros_node_->get_logger(), "x:     %f | y:     %f | phi:   %f | ", x, y, phi);
+  RCLCPP_INFO(ros_node_->get_logger(), "x:     %f | y:     %f | phi:   %f | ", car_state_.p.x, car_state_.p.x, car_state_.o.yaw);
   RCLCPP_INFO(ros_node_->get_logger(), "x_dot: %f | y_dot: %f |", x_dot, y_dot);
 
   // Update wheel steering position based on steering angle
@@ -352,7 +356,7 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   // some calculations using state space representation. In simple terms, its just point mass
   // You can try removing SetLinearVel and it will still behave the same way
   // What I found is that SetLinearVel sets the rotation rate of the wheel and just makes the tire spin but not
-  // necessarily accurate. It does not even achieve the same rotation speed that we would require!
+  // necessarily accurate. It does not even achieve the same rotation speed that we would require!  
   model_->SetWorldPose(pose);
   model_->SetLinearVel(vel);
   model_->SetAngularVel(ang);
