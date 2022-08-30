@@ -115,6 +115,14 @@ public:
 
   /// \brief Front Right wheel steering joint
   gazebo::physics::JointPtr frontRightSteeringJointPtr;
+  
+  gazebo::physics::JointPtr rearLeftWheelJointPtr;
+  
+  gazebo::physics::JointPtr rearRightWheelJointPtr;
+
+  gazebo::physics::JointPtr frontLeftWheelJointPtr;
+
+  gazebo::physics::JointPtr frontRightWheelJointPtr;
 
   /// \brief PiD Control for the front left wheel steering input
   gazebo::common::PID frontLeftWheelSteeringPID;
@@ -135,9 +143,13 @@ public:
 
   double x = 0;
   double y = 0;
+  double phi = 0;
+  double speed = 0;
 
   // cmd callback function
   void OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
+
+  double round(double val);
 };
 
 GazeboRosF1TenthModel::GazeboRosF1TenthModel()
@@ -196,6 +208,47 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
     return;
   }
 
+  std::string rearRightWheelJointName = impl_->model_->GetName() + "::"
+    + sdf->Get<std::string>("rear_right_wheel_joint");
+  impl_->rearRightWheelJointPtr =
+    impl_->model_->GetJoint(rearRightWheelJointName);
+  if (!impl_->rearRightWheelJointPtr)
+  {
+    std::cerr << "could not find rear right wheel joint" <<std::endl;
+    return;
+  }
+
+  std::string rearLeftWheelJointName = impl_->model_->GetName() + "::"
+    + sdf->Get<std::string>("rear_left_wheel_joint");
+  impl_->rearLeftWheelJointPtr =
+    impl_->model_->GetJoint(rearLeftWheelJointName);
+  if (!impl_->rearLeftWheelJointPtr)
+  {
+    std::cerr << "could not find rear left wheel joint" <<std::endl;
+    return;
+  }
+
+  std::string frontLeftWheelJointName = impl_->model_->GetName() + "::"
+    + sdf->Get<std::string>("front_left_wheel_joint");
+  impl_->frontLeftWheelJointPtr =
+    impl_->model_->GetJoint(frontLeftWheelJointName);
+  if (!impl_->frontLeftWheelJointPtr)
+  {
+    std::cerr << "could not find front left wheel joint" <<std::endl;
+    return;
+  }
+
+  std::string frontRightWheelJointName = impl_->model_->GetName() + "::"
+    + sdf->Get<std::string>("front_right_wheel_joint");
+  impl_->frontRightWheelJointPtr =
+    impl_->model_->GetJoint(frontRightWheelJointName);
+  if (!impl_->frontRightWheelJointPtr)
+  {
+    std::cerr << "could not find front right wheel joint" <<std::endl;
+    return;
+  }
+
+
   std::string baseLinkName = impl_->model_->GetName() + "::"
     + sdf->Get<std::string>("base_link");
   impl_->baseLinkPtr = impl_->model_->GetLink(baseLinkName);
@@ -224,54 +277,7 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
   impl_->update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
     std::bind(&GazeboRosF1TenthModelPrivate::OnUpdate, impl_.get(), std::placeholders::_1));
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // TODO(Khalid): Implement PID system
-  // std::string paramName;
-  // double paramDefault;
-
-  // paramName = "flwheel_steering_p_gain";
-  // paramDefault = 0;
-  // if (sdf->HasElement(paramName))
-  //   impl_->frontLeftWheelSteeringPID.SetPGain(sdf->Get<double>(paramName));
-  // else
-  //   impl_->frontLeftWheelSteeringPID.SetPGain(paramDefault);
-
-  // paramName = "flwheel_steering_i_gain";
-  // paramDefault = 0;
-  // if (sdf->HasElement(paramName))
-  //   impl_->frontLeftWheelSteeringPID.SetIGain(sdf->Get<double>(paramName));
-  // else
-  //   impl_->frontLeftWheelSteeringPID.SetIGain(paramDefault);
-
-  // paramName = "flwheel_steering_d_gain";
-  // paramDefault = 0;
-  // if (sdf->HasElement(paramName))
-  //   impl_->frontLeftWheelSteeringPID.SetDGain(sdf->Get<double>(paramName));
-  // else
-  //   impl_->frontLeftWheelSteeringPID.SetDGain(paramDefault);
-
-  // paramName = "frwheel_steering_p_gain";
-  // paramDefault = 0;
-  // if (sdf->HasElement(paramName))
-  //   impl_->frontRightWheelSteeringPID.SetPGain(sdf->Get<double>(paramName));
-  // else
-  //   impl_->frontRightWheelSteeringPID.SetPGain(paramDefault);
-
-  // paramName = "frwheel_steering_i_gain";
-  // paramDefault = 0;
-  // if (sdf->HasElement(paramName))
-  //   impl_->frontRightWheelSteeringPID.SetIGain(sdf->Get<double>(paramName));
-  // else
-  //   impl_->frontRightWheelSteeringPID.SetIGain(paramDefault);
-
-  // paramName = "frwheel_steering_d_gain";
-  // paramDefault = 0;
-  // if (sdf->HasElement(paramName))
-  //   impl_->frontRightWheelSteeringPID.SetDGain(sdf->Get<double>(paramName));
-  // else
-  //   impl_->frontRightWheelSteeringPID.SetDGain(paramDefault);
-
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // TODO(Khalid): Implement a PID control. refer https://github.com/osrf/car_demo/blob/master/car_demo/plugins/PriusHybridPlugin.cc#L1033
 
   // TODO(Khalid) : Find the offset of the car with respect to the world frame
   impl_->offset_ = impl_->model_->WorldPose();
@@ -310,40 +316,40 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
       (desired_input_.steering_angle - actual_input_.steering_angle >= 0 ? 1 : -1) *
       std::min(max_steering_rate * dt, std::abs(desired_input_.steering_angle - actual_input_.steering_angle));
 
+  // Get the radius of the turn using wheelbase
+  double wheelBase = baseLinkPtr->CollisionBoundingBox().XLength();
+
+  double max_speed = 5.0;
+  actual_input_.speed += std::min(max_speed * dt, std::abs(desired_input_.speed - actual_input_.speed));
+  
+  double v_x = actual_input_.speed * cos(actual_input_.steering_angle);
+  double v_y = actual_input_.speed * sin(actual_input_.steering_angle);
+  double angular_velocity = v_x * tan(actual_input_.steering_angle) / wheelBase;
+  double phi_dot = angular_velocity;
+  double yaw = baseLinkPtr->WorldCoGPose().Yaw();
+
+  double x_dot = v_x * cos(yaw) - v_y * sin(yaw);
+  double y_dot = v_x * sin(yaw) + v_y * cos(yaw);
+  
+  x += x_dot * dt;
+  y += y_dot * dt;
+  phi += phi_dot * dt;
+
+  ignition::math::Pose3d pose(x, y, 0, 0, 0, phi);
+  ignition::math::Vector3d vel(x_dot, y_dot, 0);
+  ignition::math::Vector3d ang(0, 0, phi_dot);
+
+  RCLCPP_INFO(ros_node_->get_logger(), "x:     %f | y:     %f | phi:   %f | ", x, y, phi);
+  RCLCPP_INFO(ros_node_->get_logger(), "x_dot: %f | y_dot: %f |", x_dot, y_dot);
+
   // Update wheel steering position based on steering angle
   frontLeftSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
   frontRightSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
 
-  // ignition::math::Vector3d actual_speed = baseLinkPtr->RelativeLinearVel();
-
-  double max_speed = 5.0;
-  actual_input_.speed += std::min(max_speed * dt, std::abs(desired_input_.speed - actual_input_.speed));
-
-  std::cout << "Actual input speed: " << actual_input_.speed << " | Steering angle: " << actual_input_.steering_angle << std::endl;
-
-  // Implement kinematic model here
-  // updateState(actual_input_, )
-  double x_dot = actual_input_.speed * cos(actual_input_.steering_angle);
-  double y_dot = actual_input_.speed * sin(actual_input_.steering_angle);
-
-  double radius = 0.5 / atan(actual_input_.steering_angle);
-
-  double angular_rate = std::min(actual_input_.speed / radius, max_steering_rate);
-
-  // remember that yaw needs to be taken into account for x_dot and y_dot
-  x += offset_.X() + x_dot * dt;
-  y += offset_.Y() + y_dot * dt;
-  double z = 0.0;
-
-  std::cout << "x: " << x << " | y: " << y << " | angular_rate: " << angular_rate << std::endl;
-
-  const ignition::math::Pose3d pose(x, y, z, 0, 0.0, 0.0);
-  const ignition::math::Vector3d vel(x_dot, y_dot, 0.0);
-  const ignition::math::Vector3d angular(0.0, 0.0, angular_rate);
-
+  // Update model behaviour
   model_->SetWorldPose(pose);
-  model_->SetAngularVel(angular);
   model_->SetLinearVel(vel);
+  model_->SetAngularVel(ang);
 
   // Update time
   last_sim_update_time_ = current_sim_time;
