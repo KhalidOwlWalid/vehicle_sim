@@ -322,6 +322,7 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   double max_speed = 5.0;
   actual_input_.speed += std::min(max_speed * dt, std::abs(desired_input_.speed - actual_input_.speed));
   
+  // Kinematic model of the car
   double v_x = actual_input_.speed * cos(actual_input_.steering_angle);
   double v_y = actual_input_.speed * sin(actual_input_.steering_angle);
   double angular_velocity = v_x * tan(actual_input_.steering_angle) / wheelBase;
@@ -347,6 +348,11 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   frontRightSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
 
   // Update model behaviour
+  // Note: This behaviour is not accurate as it is basically manually setting its world position after some 
+  // some calculations using state space representation. In simple terms, its just point mass
+  // You can try removing SetLinearVel and it will still behave the same way
+  // What I found is that SetLinearVel sets the rotation rate of the wheel and just makes the tire spin but not
+  // necessarily accurate. It does not even achieve the same rotation speed that we would require!
   model_->SetWorldPose(pose);
   model_->SetLinearVel(vel);
   model_->SetAngularVel(ang);
