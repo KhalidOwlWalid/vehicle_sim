@@ -102,26 +102,22 @@ public:
   std::queue<std::shared_ptr<ackermann_msgs::msg::AckermannDriveStamped>> command_Q_;
   std::queue<gazebo::common::Time> command_time_Q_;
 
-  // Model input
-  f1tenth::model::Input desired_input_;
-  f1tenth::model::Input actual_input_;
-
-  // TODO(Khalid) :  Use sdf to define this
-  double max_steering_rate = 1.0;
-  double max_steering_angle = 1.22;
-
   /// \brief Front Left Steering Joint
   gazebo::physics::JointPtr frontLeftSteeringJointPtr;
 
   /// \brief Front Right wheel steering joint
   gazebo::physics::JointPtr frontRightSteeringJointPtr;
   
+  /// \brief Rear Left Wheel Joint
   gazebo::physics::JointPtr rearLeftWheelJointPtr;
   
+  /// \brief Rear Right Wheel Joint
   gazebo::physics::JointPtr rearRightWheelJointPtr;
 
+  /// \brief Front Left Wheel Joint
   gazebo::physics::JointPtr frontLeftWheelJointPtr;
 
+  /// \brief Front Right Wheel Joint
   gazebo::physics::JointPtr frontRightWheelJointPtr;
 
   /// \brief PiD Control for the front left wheel steering input
@@ -133,15 +129,25 @@ public:
   /// \brief Base link
   gazebo::physics::LinkPtr baseLinkPtr;
 
-  /// \brief Stores the state of the car
-  utils::State car_state_; // Default construct - initialize everything to 0.0
+  /// \brief Stores the previous state of the car
+  utils::State prev_car_state_;
+
+  /// \brief Stores the current state of the car
+  utils::State curr_car_state_; // Default construct - initialize everything to 0.0
+
+  /// \brief Stores the intial offset of the car when plugin is loaded
   utils::position car_initial_offset_;
 
-
+  // TODO(Khalid) :  Use sdf to define this
+  double max_steering_rate = 1.0;
+  double max_steering_angle = 1.22;
   double frontLeftSteeringAngle = 0;
   double frontRightSteeringAngle = 0;
-
   double frontLeftSteeringCmd = 0;
+
+  // Model input
+  f1tenth::model::Input desired_input_;
+  f1tenth::model::Input actual_input_;
 
   // cmd callback function
   void OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
@@ -281,8 +287,8 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
   impl_->car_initial_offset_.y = impl_->model_->WorldPose().Y();
 
   // Initialize the car state in its respective coordinate position upon load
-  impl_->car_state_.p.x = impl_->car_initial_offset_.x;
-  impl_->car_state_.p.y = impl_->car_initial_offset_.y;
+  impl_->curr_car_state_.p.x = impl_->car_initial_offset_.x;
+  impl_->curr_car_state_.p.y = impl_->car_initial_offset_.y;
 
   RCLCPP_INFO(impl_->ros_node_->get_logger(), "Model plugin loaded.");
 }
@@ -327,6 +333,7 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   actual_input_.speed += std::min(max_speed * dt, std::abs(desired_input_.speed - actual_input_.speed));
   
   // Kinematic model of the car
+  // TODO (Khalid): Create documentation of this calculation
   double v_x = actual_input_.speed * cos(actual_input_.steering_angle);
   double v_y = actual_input_.speed * sin(actual_input_.steering_angle);
   double angular_velocity = v_x * tan(actual_input_.steering_angle) / wheelBase;
@@ -336,15 +343,15 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   double x_dot = v_x * cos(yaw) - v_y * sin(yaw);
   double y_dot = v_x * sin(yaw) + v_y * cos(yaw);
   
-  car_state_.p.x += x_dot * dt;
-  car_state_.p.y += y_dot * dt;
-  car_state_.o.yaw += phi_dot * dt;
+  curr_car_state_.p.x += x_dot * dt;
+  curr_car_state_.p.y += y_dot * dt;
+  curr_car_state_.o.yaw += phi_dot * dt;
 
-  ignition::math::Pose3d pose(car_state_.p.x, car_state_.p.y, 0.0, 0.0, 0.0, car_state_.o.yaw);
+  ignition::math::Pose3d pose(curr_car_state_.p.x, curr_car_state_.p.y, 0.0, 0.0, 0.0, curr_car_state_.o.yaw);
   ignition::math::Vector3d vel(x_dot, y_dot, 0);
   ignition::math::Vector3d ang(0, 0, phi_dot);
 
-  RCLCPP_INFO(ros_node_->get_logger(), "x:     %f | y:     %f | phi:   %f | ", car_state_.p.x, car_state_.p.x, car_state_.o.yaw);
+  RCLCPP_INFO(ros_node_->get_logger(), "x:     %f | y:     %f | phi:   %f | ", curr_car_state_.p.x, curr_car_state_.p.x, curr_car_state_.o.yaw);
   RCLCPP_INFO(ros_node_->get_logger(), "x_dot: %f | y_dot: %f |", x_dot, y_dot);
 
   // Update wheel steering position based on steering angle
@@ -361,6 +368,7 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   model_->SetLinearVel(vel);
   model_->SetAngularVel(ang);
 
+  std::cout << model_->RelativeLinearVel() << 
   // Update time
   last_sim_update_time_ = current_sim_time;
 }
