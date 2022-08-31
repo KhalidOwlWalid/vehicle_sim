@@ -1,14 +1,21 @@
-# Launching gazebo
+# Launching the simulation
 
 ```
-ros2 launch gazebo_ros gazebo.launch.py
+ros2 launch f1tenth_gazebo f1tenth.launch.py
 ```
 
-# Spawning robot
+## Sending commands to vehicle 
 
+This command commands the car to move forward
 ```
-ros2 run vehicle_spawner_pkg spawn_vehicle mybot mybot 0.0 0.0 0.0
+ros2 topic pub /cmd ackermann_msgs/msg/AckermannDriveStamped "{drive: {speed: 1.0, steering_angle: 0.0}}"
 ```
+
+This command turns the steering accordingly (positive - right, negative - left)
+```
+ros2 topic pub /cmd ackermann_msgs/msg/AckermannDriveStamped "{drive: {speed: 0.0, steering_angle: 1.0}}"
+```
+
 
 ### Resources
 https://github.com/srmainwaring/steer_bot
