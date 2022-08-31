@@ -52,8 +52,8 @@
 #include <f1tenth_gazebo_plugins/input.hpp>
 #include <f1tenth_gazebo_plugins/state.hpp>
 
-#include <geometry_msgs/msg/pose.hpp>
-#include <geometry_msgs/msg/twist.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/twist_stamped.hpp>
 
 namespace gazebo_plugins
 {
@@ -72,10 +72,10 @@ public:
   rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr drive_topic_pub_;
 
   /// Car state twist (linear and angular velocity)
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr car_state_twist_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr car_state_twist_pub_;
 
   /// Car State position (position and orientation)
-  rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr car_state_pose_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr car_state_pose_pub_;
 
   // Command Subscription
   rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr sub_cmd_;
@@ -107,24 +107,6 @@ public:
 
   /// \brief Front Right wheel steering joint
   gazebo::physics::JointPtr frontRightSteeringJointPtr;
-  
-  /// \brief Rear Left Wheel Joint
-  gazebo::physics::JointPtr rearLeftWheelJointPtr;
-  
-  /// \brief Rear Right Wheel Joint
-  gazebo::physics::JointPtr rearRightWheelJointPtr;
-
-  /// \brief Front Left Wheel Joint
-  gazebo::physics::JointPtr frontLeftWheelJointPtr;
-
-  /// \brief Front Right Wheel Joint
-  gazebo::physics::JointPtr frontRightWheelJointPtr;
-
-  /// \brief PiD Control for the front left wheel steering input
-  gazebo::common::PID frontLeftWheelSteeringPID;
-
-  /// \brief PID Control for the front right wheel steering input
-  gazebo::common::PID frontRightWheelSteeringPID;
 
   /// \brief Base link
   gazebo::physics::LinkPtr baseLinkPtr;
@@ -152,9 +134,7 @@ public:
   // cmd callback function
   void OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
 
-  void publishCarStatePose(utils::State &car_state);
-
-  double round(double val);
+  void publishCarStatePose(utils::State &car_state, const gazebo::common::UpdateInfo & info);
 };
 
 GazeboRosF1TenthModel::GazeboRosF1TenthModel()
@@ -214,53 +194,14 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
     return;
   }
 
-  std::string rearRightWheelJointName = impl_->model_->GetName() + "::"
-    + sdf->Get<std::string>("rear_right_wheel_joint");
-  impl_->rearRightWheelJointPtr =
-    impl_->model_->GetJoint(rearRightWheelJointName);
-  if (!impl_->rearRightWheelJointPtr)
-  {
-    std::cerr << "could not find rear right wheel joint" <<std::endl;
-    return;
-  }
-
-  std::string rearLeftWheelJointName = impl_->model_->GetName() + "::"
-    + sdf->Get<std::string>("rear_left_wheel_joint");
-  impl_->rearLeftWheelJointPtr =
-    impl_->model_->GetJoint(rearLeftWheelJointName);
-  if (!impl_->rearLeftWheelJointPtr)
-  {
-    std::cerr << "could not find rear left wheel joint" <<std::endl;
-    return;
-  }
-
-  std::string frontLeftWheelJointName = impl_->model_->GetName() + "::"
-    + sdf->Get<std::string>("front_left_wheel_joint");
-  impl_->frontLeftWheelJointPtr =
-    impl_->model_->GetJoint(frontLeftWheelJointName);
-  if (!impl_->frontLeftWheelJointPtr)
-  {
-    std::cerr << "could not find front left wheel joint" <<std::endl;
-    return;
-  }
-
-  std::string frontRightWheelJointName = impl_->model_->GetName() + "::"
-    + sdf->Get<std::string>("front_right_wheel_joint");
-  impl_->frontRightWheelJointPtr =
-    impl_->model_->GetJoint(frontRightWheelJointName);
-  if (!impl_->frontRightWheelJointPtr)
-  {
-    std::cerr << "could not find front right wheel joint" <<std::endl;
-    return;
-  }
-
-
   std::string baseLinkName = impl_->model_->GetName() + "::"
     + sdf->Get<std::string>("base_link");
   impl_->baseLinkPtr = impl_->model_->GetLink(baseLinkName);
   if (!impl_->baseLinkPtr)
   {
-    std::cerr << "could not find base link" << std::endl;
+    std::cerr << "Could not find the " << std::endl;
+    RCLCPP_ERROR(
+      impl_->ros_node_->get_logger(), "Could not find %s. Please check your URDF file.", baseLinkName.c_str());
     return;
   }
 
@@ -276,10 +217,10 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
   impl_->drive_topic_pub_ = impl_->ros_node_->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>(
     drive_topic_, qos.get_publisher_qos(drive_topic_, rclcpp::QoS(1000)));
 
-  impl_->car_state_twist_pub_ = impl_->ros_node_->create_publisher<geometry_msgs::msg::Twist>(
+  impl_->car_state_twist_pub_ = impl_->ros_node_->create_publisher<geometry_msgs::msg::TwistStamped>(
     "car_state_twist", qos.get_publisher_qos("car_state_twist", rclcpp::QoS(1000)));
 
-  impl_->car_state_pose_pub_ = impl_->ros_node_->create_publisher<geometry_msgs::msg::Pose>(
+  impl_->car_state_pose_pub_ = impl_->ros_node_->create_publisher<geometry_msgs::msg::PoseStamped>(
     "car_state_pose", qos.get_publisher_qos("car_state_pose", rclcpp::QoS(1000)));
 
   impl_->sub_cmd_ = impl_->ros_node_->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
@@ -353,6 +294,7 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   
   // Kinematic model of the car
   // TODO (Khalid): Create documentation of this calculation
+  // TODO (Khalid): Add slip
   double v_x = actual_input_.speed * cos(actual_input_.steering_angle);
   double v_y = actual_input_.speed * sin(actual_input_.steering_angle);
   double angular_velocity = v_x * tan(actual_input_.steering_angle) / wheelBase;
@@ -387,7 +329,7 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   model_->SetLinearVel(vel);
   model_->SetAngularVel(ang);
 
-  publishCarStatePose(curr_car_state_);
+  publishCarStatePose(curr_car_state_, info);
 
   // Update time
   last_sim_update_time_ = current_sim_time;
@@ -399,19 +341,26 @@ void GazeboRosF1TenthModelPrivate::OnCmd(const ackermann_msgs::msg::AckermannDri
   last_cmd_time_ = model_->GetWorld()->SimTime();
 }
 
-void GazeboRosF1TenthModelPrivate::publishCarStatePose(utils::State &car_state) {
+void GazeboRosF1TenthModelPrivate::publishCarStatePose(utils::State &car_state, const gazebo::common::UpdateInfo & info) {
 
-  geometry_msgs::msg::Pose car_state_msg;
-  geometry_msgs::msg::Pose actual_car_state_msg;
+  geometry_msgs::msg::PoseStamped car_state_msg;
 
-  // Publishes the desired car pose and orientation
-  car_state_msg.position.x = car_state.p.x;
-  car_state_msg.position.y = car_state.p.y;
-  car_state_msg.position.z = car_state.p.z;
+  // Update time
+  car_state_msg.header.stamp.sec = info.simTime.sec;
+  car_state_msg.header.stamp.nanosec = info.simTime.nsec;
 
-  car_state_msg.orientation.x = car_state.o.roll;
-  car_state_msg.orientation.y = car_state.o.pitch;
-  car_state_msg.orientation.z = car_state.o.yaw;
+  // Frame ID
+  car_state_msg.header.frame_id = "base_link";
+
+  // Car position
+  car_state_msg.pose.position.x = car_state.p.x;
+  car_state_msg.pose.position.y = car_state.p.y;
+  car_state_msg.pose.position.z = car_state.p.z;
+
+  // Car orientation
+  car_state_msg.pose.orientation.x = car_state.o.roll;
+  car_state_msg.pose.orientation.y = car_state.o.pitch;
+  car_state_msg.pose.orientation.z = car_state.o.yaw;
 
   car_state_pose_pub_->publish(car_state_msg);
 }
