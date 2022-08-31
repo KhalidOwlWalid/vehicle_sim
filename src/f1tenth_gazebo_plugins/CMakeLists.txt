@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(gazebo_dev REQUIRED)
 find_package(gazebo_ros REQUIRED)
 find_package(ackermann_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 
 # Refer : https://stackoverflow.com/questions/40223903/cmake-how-to-include-headers-without-sources
@@ -51,6 +52,7 @@ ament_target_dependencies(f1tenth_model_plugin
   "gazebo_ros"
   "rclcpp"
   "ackermann_msgs"
+  "geometry_msgs"
 )
 ament_export_libraries(f1tenth_model_plugin)
 if(ENABLE_PROFILER)

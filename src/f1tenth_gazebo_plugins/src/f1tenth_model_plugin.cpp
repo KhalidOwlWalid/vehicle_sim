@@ -40,9 +40,6 @@
 #include <f1tenth_gazebo_plugins/f1tenth_model_plugin.hpp>
 #include <gazebo_ros/conversions/builtin_interfaces.hpp>
 #include <gazebo_ros/node.hpp>
-#ifdef IGN_PROFILER_ENABLE
-#include <ignition/common/Profiler.hh>
-#endif
 #include <rclcpp/rclcpp.hpp>
 #include <ackermann_msgs/msg/ackermann_drive_stamped.hpp>
 
@@ -55,17 +52,14 @@
 #include <f1tenth_gazebo_plugins/input.hpp>
 #include <f1tenth_gazebo_plugins/state.hpp>
 
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+
 namespace gazebo_plugins
 {
 class GazeboRosF1TenthModelPrivate
 {
 public:
-
-  enum {
-    FRONT_RIGHT,
-
-    FRONT_LEFT
-  };
 
   /// Callback to be called at every simulation iteration.
   /// \param[in] info Updated simulation info.
@@ -74,8 +68,14 @@ public:
   /// A pointer to the GazeboROS node.
   gazebo_ros::Node::SharedPtr ros_node_{nullptr};
 
-  /// Command publisher
+  /// Drive command publisher
   rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr drive_topic_pub_;
+
+  /// Car state twist (linear and angular velocity)
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr car_state_twist_pub_;
+
+  /// Car State position (position and orientation)
+  rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr car_state_pose_pub_;
 
   // Command Subscription
   rclcpp::Subscription<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr sub_cmd_;
@@ -152,6 +152,8 @@ public:
   // cmd callback function
   void OnCmd(const ackermann_msgs::msg::AckermannDriveStamped::SharedPtr msg);
 
+  void publishCarStatePose(utils::State &car_state);
+
   double round(double val);
 };
 
@@ -175,6 +177,7 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
   const gazebo_ros::QoS & qos = impl_->ros_node_->get_qos();
 
   // Joints
+  // TODO (Khalid): Create utility library
   std::string drive_topic_ = "cmd";
   if (!sdf->HasElement("drive_topic")) {
     RCLCPP_INFO(impl_->ros_node_->get_logger(), "Missing <drive_topic> tag, defaults to %s", drive_topic_.c_str());
@@ -273,6 +276,12 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
   impl_->drive_topic_pub_ = impl_->ros_node_->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>(
     drive_topic_, qos.get_publisher_qos(drive_topic_, rclcpp::QoS(1000)));
 
+  impl_->car_state_twist_pub_ = impl_->ros_node_->create_publisher<geometry_msgs::msg::Twist>(
+    "car_state_twist", qos.get_publisher_qos("car_state_twist", rclcpp::QoS(1000)));
+
+  impl_->car_state_pose_pub_ = impl_->ros_node_->create_publisher<geometry_msgs::msg::Pose>(
+    "car_state_pose", qos.get_publisher_qos("car_state_pose", rclcpp::QoS(1000)));
+
   impl_->sub_cmd_ = impl_->ros_node_->create_subscription<ackermann_msgs::msg::AckermannDriveStamped>(
     "/cmd", 1,  std::bind(&GazeboRosF1TenthModelPrivate::OnCmd, impl_.get(), std::placeholders::_1));
 
@@ -282,7 +291,6 @@ void GazeboRosF1TenthModel::Load(gazebo::physics::ModelPtr model, sdf::ElementPt
 
   // TODO(Khalid): Implement a PID control. refer https://github.com/osrf/car_demo/blob/master/car_demo/plugins/PriusHybridPlugin.cc#L1033
 
-  // TODO(Khalid) : Find the offset of the car with respect to the world frame
   impl_->car_initial_offset_.x = impl_->model_->WorldPose().X();
   impl_->car_initial_offset_.y = impl_->model_->WorldPose().Y();
 
@@ -322,6 +330,8 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
     command_Q_.pop();
   }
 
+  // Get the current state of the car
+
   actual_input_.steering_angle +=
       (desired_input_.steering_angle - actual_input_.steering_angle >= 0 ? 1 : -1) *
       std::min(max_steering_rate * dt, std::abs(desired_input_.steering_angle - actual_input_.steering_angle));
@@ -332,7 +342,6 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   double max_speed = 5.0;
 
   // TODO (Khalid): Add acceleration mode
-  // TODO (Khalid): When negative speed is sent, desired speed becomes less than actual speed, which makes the absolute value larger, hence the increase in speed
 
   if (desired_input_.speed < actual_input_.speed){
     // Slow down the car, create a gradual decrease in the car's velocity
@@ -368,8 +377,8 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   frontLeftSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
   frontRightSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
 
-  // Update model behaviour
-  // Note: This behaviour is not accurate as it is basically manually setting its world position after some 
+  // TODO (Khalid): Send velocity or torque command to the wheels instead
+  // Reason: Kinematic model is not entirely accurate as it is basically manually setting its world position after some 
   // some calculations using state space representation. In simple terms, its just point mass
   // You can try removing SetLinearVel and it will still behave the same way
   // What I found is that SetLinearVel sets the rotation rate of the wheel and just makes the tire spin but not
@@ -377,6 +386,8 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   model_->SetWorldPose(pose);
   model_->SetLinearVel(vel);
   model_->SetAngularVel(ang);
+
+  publishCarStatePose(curr_car_state_);
 
   // Update time
   last_sim_update_time_ = current_sim_time;
@@ -386,6 +397,23 @@ void GazeboRosF1TenthModelPrivate::OnCmd(const ackermann_msgs::msg::AckermannDri
   command_Q_ .push(msg);
   command_time_Q_.push(model_->GetWorld()->SimTime());
   last_cmd_time_ = model_->GetWorld()->SimTime();
+}
+
+void GazeboRosF1TenthModelPrivate::publishCarStatePose(utils::State &car_state) {
+
+  geometry_msgs::msg::Pose car_state_msg;
+  geometry_msgs::msg::Pose actual_car_state_msg;
+
+  // Publishes the desired car pose and orientation
+  car_state_msg.position.x = car_state.p.x;
+  car_state_msg.position.y = car_state.p.y;
+  car_state_msg.position.z = car_state.p.z;
+
+  car_state_msg.orientation.x = car_state.o.roll;
+  car_state_msg.orientation.y = car_state.o.pitch;
+  car_state_msg.orientation.z = car_state.o.yaw;
+
+  car_state_pose_pub_->publish(car_state_msg);
 }
 
 GZ_REGISTER_MODEL_PLUGIN(GazeboRosF1TenthModel)

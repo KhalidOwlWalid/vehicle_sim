@@ -16,6 +16,7 @@
   <depend>gazebo_ros</depend>
   <depend>gazebo_dev</depend>
   <depend>ackermann_msgs</depend>
+  <depend>geometry_msgs</depend>
   <depend>rclcpp</depend>
 
   <export>
