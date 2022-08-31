@@ -330,7 +330,17 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   double wheelBase = baseLinkPtr->CollisionBoundingBox().XLength();
 
   double max_speed = 5.0;
-  actual_input_.speed += std::min(max_speed * dt, std::abs(desired_input_.speed - actual_input_.speed));
+
+  // TODO (Khalid): Add acceleration mode
+  // TODO (Khalid): When negative speed is sent, desired speed becomes less than actual speed, which makes the absolute value larger, hence the increase in speed
+
+  if (desired_input_.speed < actual_input_.speed){
+    // Slow down the car, create a gradual decrease in the car's velocity
+    actual_input_.speed += std::max(-max_speed * dt, desired_input_.speed - actual_input_.speed);
+  } else {
+    // Move the car forward and increase speed gradually
+    actual_input_.speed += std::min(max_speed * dt, std::abs(desired_input_.speed - actual_input_.speed));
+  }
   
   // Kinematic model of the car
   // TODO (Khalid): Create documentation of this calculation
@@ -351,8 +361,8 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   ignition::math::Vector3d vel(x_dot, y_dot, 0);
   ignition::math::Vector3d ang(0, 0, phi_dot);
 
-  RCLCPP_INFO(ros_node_->get_logger(), "x:     %f | y:     %f | phi:   %f | ", curr_car_state_.p.x, curr_car_state_.p.x, curr_car_state_.o.yaw);
-  RCLCPP_INFO(ros_node_->get_logger(), "x_dot: %f | y_dot: %f |", x_dot, y_dot);
+  // RCLCPP_INFO(ros_node_->get_logger(), "x:     %f | y:     %f | phi:   %f | ", curr_car_state_.p.x, curr_car_state_.p.x, curr_car_state_.o.yaw);
+  // RCLCPP_INFO(ros_node_->get_logger(), "x_dot: %f | y_dot: %f |", x_dot, y_dot);
 
   // Update wheel steering position based on steering angle
   frontLeftSteeringJointPtr->SetPosition(0, actual_input_.steering_angle);
@@ -368,7 +378,6 @@ void GazeboRosF1TenthModelPrivate::OnUpdate(const gazebo::common::UpdateInfo & i
   model_->SetLinearVel(vel);
   model_->SetAngularVel(ang);
 
-  std::cout << model_->RelativeLinearVel() << 
   // Update time
   last_sim_update_time_ = current_sim_time;
 }
